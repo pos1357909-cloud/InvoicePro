@@ -161,6 +161,29 @@ app.get('/api/admin/users', adminMiddleware, async (req, res) => {
     }
 });
 
+app.post('/api/admin/users', adminMiddleware, async (req, res) => {
+    const { email, password, business_name, whatsapp_number, marketplace_enabled, status } = req.body;
+    if (!email || !password || !business_name) {
+        return res.status(400).json({ error: 'Missing required fields' });
+    }
+    try {
+        const existingUser = await User.findOne({ email: String(email) });
+        if (existingUser) return res.status(400).json({ error: 'User already exists' });
+        
+        const user = await User.create({ 
+            email: String(email), 
+            password: String(password), 
+            business_name: String(business_name), 
+            whatsapp_number: String(whatsapp_number || ''), 
+            marketplace_enabled: Boolean(marketplace_enabled),
+            status: status || 'approved'
+        });
+        res.status(201).json({ message: 'User created successfully', id: user._id.toString() });
+    } catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+});
+
 app.put('/api/admin/users/:id', adminMiddleware, async (req, res) => {
     const { email, business_name, whatsapp_number, marketplace_enabled, status } = req.body;
     try {

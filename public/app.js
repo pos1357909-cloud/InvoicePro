@@ -334,6 +334,14 @@ function setupModals() {
         window.print();
     });
     
+    // Admin User Details logic
+    document.getElementById('btn-admin-add-user')?.addEventListener('click', () => {
+        document.getElementById('admin-user-form').reset();
+        document.getElementById('admin-user-id').value = '';
+        document.getElementById('admin-password').required = true;
+        showModal(document.getElementById('admin-user-modal'));
+    });
+
     // Admin User Edit Form
     document.getElementById('admin-user-form').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -341,18 +349,24 @@ function setupModals() {
         const business_name = document.getElementById('admin-business-name').value;
         const email = document.getElementById('admin-email').value;
         const whatsapp_number = document.getElementById('admin-whatsapp').value;
+        const password = document.getElementById('admin-password').value;
         const marketplace_enabled = document.getElementById('admin-marketplace-enabled').checked;
         const status = document.getElementById('admin-status').value;
         
         try {
-            const res = await fetchAuth(`${API_BASE}/admin/users/${id}`, {
-                method: 'PUT',
+            const url = id ? `${API_BASE}/admin/users/${id}` : `${API_BASE}/admin/users`;
+            const method = id ? 'PUT' : 'POST';
+            const body = { business_name, email, whatsapp_number, marketplace_enabled, status };
+            if (password) body.password = password;
+
+            const res = await fetchAuth(url, {
+                method: method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ business_name, email, whatsapp_number, marketplace_enabled, status })
+                body: JSON.stringify(body)
             });
             if (!res.ok) {
                 const errData = await res.json().catch(() => ({}));
-                throw new Error(errData.error || 'Error updating user');
+                throw new Error(errData.error || 'Error saving user');
             }
             hideModal();
             loadAdminUsers();
@@ -962,32 +976,32 @@ document.getElementById('btn-send-wa').addEventListener('click', () => {
     const customerNumber = document.getElementById('pos-customer-number').value;
     
     let now = new Date();
-    let dateStr = now.toLocaleDateString() + ' ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    let dateStr = now.toLocaleDateString();
+    let timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     
-    let text = `🧾 *${(currentBusiness || 'InvoicePro').toUpperCase()} - INVOICE* 🧾\n`;
-    text += `🕒 *Date & Time:* ${dateStr}\n`;
+    let text = `✨ *${(currentBusiness || 'InvoicePro').toUpperCase()} - INVOICE* ✨\n\n`;
+    text += `📅 *Date:* ${dateStr}\n`;
+    text += `⏰ *Time:* ${timeStr}\n`;
     text += `➖➖➖➖➖➖➖➖➖➖➖➖\n`;
     if (customerName) text += `👤 *Customer:* ${customerName}\n\n`;
     
-    text += `🛒 *ORDER DETAILS:*\n`;
+    text += `🛒 *ORDER HIGHLIGHTS:*\n`;
     currentBill.forEach(i => {
-        text += `🔹 ${i.name}\n      ${i.quantity} x ${formatCurrency(i.price)} = *${formatCurrency(i.price * i.quantity)}*\n`;
+        text += `🔹 *${i.name}*\n      ${i.quantity} x ${formatCurrency(i.price)} = *${formatCurrency(i.price * i.quantity)}*\n`;
     });
     
     text += `➖➖➖➖➖➖➖➖➖➖➖➖\n`;
-    text += `📊 *Sub Total*: ${formatCurrency(subTotal)}\n`;
-    text += `🚚 *Delivery Fee*: ${formatCurrency(deliveryFee)}\n`;
-    text += `💰 *Total Amount*: *${formatCurrency(totalAmount)}*\n`;
+    text += `📝 *Sub Total*: ${formatCurrency(subTotal)}\n`;
+    if (deliveryFee > 0) text += `🚚 *Delivery Fee*: ${formatCurrency(deliveryFee)}\n`;
+    text += `💰 *TOTAL AMOUNT*: *${formatCurrency(totalAmount)}*\n`;
     if (advancePayment > 0) {
         text += `💵 *Advance Payment*: ${formatCurrency(advancePayment)}\n`;
-        text += `⚖️ *Balance Due*: *${formatCurrency(balance)}*\n`;
+        text += `⚖️ *BALANCE DUE*: *${formatCurrency(balance)}*\n`;
     }
     text += `➖➖➖➖➖➖➖➖➖➖➖➖\n\n`;
-    if (currentBankDetails && currentBankDetails.trim() !== '') {
-        text += `🏦 *BANK DETAILS:*\n${currentBankDetails}\n\n`;
-    }
-    text += `📦 *Estimated delivery time:* 3–5 working days.\n\n`;
-    text += `✨ _Thank you for your order!_ ✨`;
+    
+    text += `📦 *Estimated delivery time:* 2–3 working days.\n\n`;
+    text += `_Thank you for your order!_`;
     
     const encoded = encodeURIComponent(text);
     window.open(`https://wa.me/?text=${encoded}`, '_blank');
@@ -1261,9 +1275,11 @@ document.querySelector('#admin-users-table tbody').addEventListener('click', asy
             document.getElementById('admin-business-name').value = user.business_name;
             document.getElementById('admin-email').value = user.email;
             document.getElementById('admin-whatsapp').value = user.whatsapp_number || '';
+            document.getElementById('admin-password').value = '';
+            document.getElementById('admin-password').required = false;
             document.getElementById('admin-marketplace-enabled').checked = user.marketplace_enabled;
             document.getElementById('admin-status').value = user.status || 'pending';
-            showModal(adminUserModal);
+            showModal(document.getElementById('admin-user-modal'));
         }
         return;
     }
