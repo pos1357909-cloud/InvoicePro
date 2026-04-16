@@ -36,7 +36,9 @@ app.post('/api/auth/register', async (req, res) => {
         res.status(201).json({ 
             token: user._id.toString(), 
             business_name: user.business_name, 
-            role: user.role 
+            role: user.role,
+            email: user.email,
+            whatsapp_number: user.whatsapp_number
         });
     } catch (err) {
         return res.status(500).json({ error: err.message });
@@ -54,7 +56,13 @@ app.post('/api/auth/login', async (req, res) => {
         if (!user) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
-        res.json({ token: user._id.toString(), business_name: user.business_name, role: user.role });
+        res.json({ 
+            token: user._id.toString(), 
+            business_name: user.business_name, 
+            role: user.role,
+            email: user.email,
+            whatsapp_number: user.whatsapp_number
+        });
     } catch (err) {
         return res.status(500).json({ error: err.message });
     }
@@ -79,8 +87,17 @@ const authMiddleware = async (req, res, next) => {
 };
 
 app.use('/api', (req, res, next) => {
-    if (req.path.startsWith('/auth') || req.path.startsWith('/public')) return next();
+    if (req.path === '/auth/login' || req.path === '/auth/register' || req.path.startsWith('/public')) return next();
     return authMiddleware(req, res, next);
+});
+
+app.get('/api/auth/me', async (req, res) => {
+    res.json({
+        business_name: req.user.business_name,
+        email: req.user.email,
+        whatsapp_number: req.user.whatsapp_number,
+        role: req.user.role
+    });
 });
 
 // ==== ADMIN API ====

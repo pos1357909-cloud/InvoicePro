@@ -3,6 +3,8 @@ const API_BASE = '/api';
 let authToken = localStorage.getItem('pos_token') || null;
 let currentBusiness = localStorage.getItem('pos_business') || '';
 let currentRole = localStorage.getItem('pos_role') || 'user';
+let currentEmail = localStorage.getItem('pos_email') || '';
+let currentWhatsApp = localStorage.getItem('pos_whatsapp') || '';
 
 // ==== AUTH LOGIC ====
 const authOverlay = document.getElementById('auth-overlay');
@@ -35,7 +37,7 @@ loginForm.addEventListener('submit', async (e) => {
         const data = await res.json();
         if(!res.ok) throw new Error(data.error || 'Login failed');
         
-        loginSuccess(data.token, data.business_name, data.role);
+        loginSuccess(data.token, data.business_name, data.role, data.email, data.whatsapp_number);
     } catch(err) { alert(err.message); }
 });
 
@@ -55,17 +57,21 @@ registerForm.addEventListener('submit', async (e) => {
         const data = await res.json();
         if(!res.ok) throw new Error(data.error || 'Registration failed');
         
-        loginSuccess(data.token, data.business_name, data.role);
+        loginSuccess(data.token, data.business_name, data.role, data.email, data.whatsapp_number);
     } catch(err) { alert(err.message); }
 });
 
-function loginSuccess(token, businessName, role = 'user') {
+function loginSuccess(token, businessName, role = 'user', email = '', whatsapp = '') {
     authToken = token;
     currentBusiness = businessName;
     currentRole = role;
+    currentEmail = email;
+    currentWhatsApp = whatsapp;
     localStorage.setItem('pos_token', token);
     localStorage.setItem('pos_business', businessName);
     localStorage.setItem('pos_role', role);
+    localStorage.setItem('pos_email', email);
+    localStorage.setItem('pos_whatsapp', whatsapp);
     checkAuth();
 }
 
@@ -73,16 +79,39 @@ document.getElementById('btn-logout').addEventListener('click', () => {
     authToken = null;
     currentBusiness = '';
     currentRole = 'user';
+    currentEmail = '';
+    currentWhatsApp = '';
     localStorage.removeItem('pos_token');
     localStorage.removeItem('pos_business');
     localStorage.removeItem('pos_role');
+    localStorage.removeItem('pos_email');
+    localStorage.removeItem('pos_whatsapp');
     checkAuth();
 });
 
-function checkAuth() {
+async function checkAuth() {
     if (authToken) {
         authOverlay.classList.remove('active');
         document.getElementById('business-name-display').textContent = currentBusiness;
+        
+        // Attempt to fetch fresh details if missing
+        if (!currentEmail || !currentWhatsApp) {
+            try {
+                const res = await fetch(`${API_BASE}/auth/me`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                if(res.ok) {
+                    const data = await res.json();
+                    currentBusiness = data.business_name || currentBusiness;
+                    currentEmail = data.email || '';
+                    currentWhatsApp = data.whatsapp_number || '';
+                    localStorage.setItem('pos_business', currentBusiness);
+                    localStorage.setItem('pos_email', currentEmail);
+                    localStorage.setItem('pos_whatsapp', currentWhatsApp);
+                    document.getElementById('business-name-display').textContent = currentBusiness;
+                }
+            } catch(e) { console.error('Silent auth refresh failed', e); }
+        }
         
         if (currentRole === 'admin') {
             document.getElementById('nav-item-admin').style.display = 'block';
@@ -708,7 +737,9 @@ function getBillHTMLForExport() {
         <div style="padding: 20px; font-family: 'Inter', sans-serif; background: #fff; color: #000; width: 400px; margin: 0 auto; box-sizing: border-box;">
             <div style="text-align: center; margin-bottom: 15px;">
                 <h2 style="margin:0; font-size: 24px; font-weight: bold;">INVOICE</h2>
-                <p style="margin:5px 0; font-weight: bold;">${currentBusiness || 'InvoicePro'}</p>
+                <p style="margin:5px 0; font-weight: bold; font-size: 18px;">${currentBusiness || 'InvoicePro'}</p>
+                ${currentEmail ? `<p style="margin:2px 0; font-size: 12px; color: #555;">${currentEmail}</p>` : ''}
+                ${currentWhatsApp ? `<p style="margin:2px 0; font-size: 12px; color: #555;">WA: ${currentWhatsApp}</p>` : ''}
             </div>
             ${customerName || customerNumber ? `
             <div style="margin-bottom: 15px; font-size: 14px; border-bottom: 1px dashed #ccc; padding-bottom: 10px;">
@@ -743,17 +774,31 @@ function getBillHTMLForExport() {
     `;
 }
 
-document.getElementById('btn-generate-pdf').addEventListener('click', () => {
+document.getElementById('btn-generate-pdf').addEventListener('click', async () => {
     if (currentBill.length === 0) { alert('Bill is empty!'); return; }
     const element = document.createElement('div');
     element.innerHTML = getBillHTMLForExport();
-    html2pdf().from(element.firstElementChild).set({
-        margin: 1,
-        filename: `Bill_${Date.now()}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
-    }).save();
+    element.style.position = 'absolute';
+    element.style.top = '-9999px';
+    document.body.appendChild(element);
+    
+    // Slight delay to ensure DOM renderer registers layout before PDF snapshot
+    await new Promise(r => setTimeout(r, 100));
+    
+    try {
+        await html2pdf().from(element.firstElementChild).set({
+            margin: 1,
+            filename: `Bill_${Date.now()}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+        }).save();
+    } catch(err) {
+        console.error(err);
+        alert('Failed to generate PDF');
+    } finally {
+        document.body.removeChild(element);
+    }
 });
 
 document.getElementById('btn-generate-image').addEventListener('click', async () => {
@@ -763,6 +808,8 @@ document.getElementById('btn-generate-image').addEventListener('click', async ()
     element.style.position = 'absolute';
     element.style.top = '-9999px';
     document.body.appendChild(element);
+    
+    await new Promise(r => setTimeout(r, 100)); // Delay for DOM render
     
     try {
         const canvas = await html2canvas(element.firstElementChild);
@@ -799,7 +846,10 @@ document.getElementById('btn-send-wa').addEventListener('click', () => {
     const customerNumber = document.getElementById('pos-customer-number').value;
     
     let text = `*INVOICE*\n`;
-    text += `*${currentBusiness || 'InvoicePro'}*\n\n`;
+    text += `*${currentBusiness || 'InvoicePro'}*\n`;
+    if (currentEmail) text += `${currentEmail}\n`;
+    if (currentWhatsApp) text += `WA: ${currentWhatsApp}\n`;
+    text += `\n`;
     if (customerName) text += `Customer: ${customerName}\n`;
     if (customerNumber) text += `Contact: ${customerNumber}\n\n`;
     currentBill.forEach(i => {
