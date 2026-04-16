@@ -55,11 +55,22 @@ const InvoiceSchema = new mongoose.Schema({
     invoice_number: { type: String, required: true },
     date: { type: String, required: true }, // Format: YYYY-MM-DD
     time: { type: String, required: true }, // Format: HH:MM
+    order_id: { type: String },
+    payment_method: { type: String, default: 'Cash' },
+    customer_name: { type: String },
+    customer_phone: { type: String },
+    customer_address: { type: String },
+    customer_email: { type: String },
+    delivery_method: { type: String },
+    delivery_date: { type: String },
+    delivery_tracking: { type: String },
     sub_total: { type: Number, default: 0.0 },
     delivery_fee: { type: Number, default: 0.0 },
+    discount: { type: Number, default: 0.0 },
     total_amount: { type: Number, default: 0.0 },
     advance_payment: { type: Number, default: 0.0 },
     balance: { type: Number, default: 0.0 },
+    notes: { type: String },
     items: [InvoiceItemSchema]
 });
 

@@ -320,11 +320,22 @@ app.get('/api/invoices/:id', async (req, res) => {
             invoice_number: invoice.invoice_number,
             date: invoice.date,
             time: invoice.time,
+            order_id: invoice.order_id,
+            payment_method: invoice.payment_method,
+            customer_name: invoice.customer_name,
+            customer_phone: invoice.customer_phone,
+            customer_address: invoice.customer_address,
+            customer_email: invoice.customer_email,
+            delivery_method: invoice.delivery_method,
+            delivery_date: invoice.delivery_date,
+            delivery_tracking: invoice.delivery_tracking,
             sub_total: invoice.sub_total,
             delivery_fee: invoice.delivery_fee,
+            discount: invoice.discount,
             total_amount: invoice.total_amount,
             advance_payment: invoice.advance_payment,
             balance: invoice.balance,
+            notes: invoice.notes,
             items: invoice.items.map(item => ({
                 id: item._id ? item._id.toString() : null,
                 product_name: item.product_name,
@@ -340,7 +351,12 @@ app.get('/api/invoices/:id', async (req, res) => {
 });
 
 app.post('/api/invoices', async (req, res) => {
-    const { items, sub_total, delivery_fee, total_amount, advance_payment, balance } = req.body;
+    const { 
+        items, sub_total, delivery_fee, discount, total_amount, advance_payment, balance,
+        order_id, payment_method, customer_name, customer_phone, customer_address, 
+        customer_email, delivery_method, delivery_date, delivery_tracking, notes 
+    } = req.body;
+    
     if (!items || items.length === 0 || total_amount === undefined) {
         return res.status(400).json({ error: 'Invalid invoice data' });
     }
@@ -366,8 +382,11 @@ app.post('/api/invoices', async (req, res) => {
             invoice_number,
             date,
             time,
+            order_id, payment_method, customer_name, customer_phone, customer_address, 
+            customer_email, delivery_method, delivery_date, delivery_tracking, notes,
             sub_total: sub_total || 0,
             delivery_fee: delivery_fee || 0,
+            discount: discount || 0,
             total_amount,
             advance_payment: advance_payment || 0,
             balance: balance || 0,
@@ -389,11 +408,22 @@ app.post('/api/invoices', async (req, res) => {
                 invoice_number,
                 date,
                 time,
+                order_id: invoice.order_id,
+                payment_method: invoice.payment_method,
+                customer_name: invoice.customer_name,
+                customer_phone: invoice.customer_phone,
+                customer_address: invoice.customer_address,
+                customer_email: invoice.customer_email,
+                delivery_method: invoice.delivery_method,
+                delivery_date: invoice.delivery_date,
+                delivery_tracking: invoice.delivery_tracking,
                 sub_total: invoice.sub_total,
                 delivery_fee: invoice.delivery_fee,
+                discount: invoice.discount,
                 total_amount: invoice.total_amount,
                 advance_payment: invoice.advance_payment,
                 balance: invoice.balance,
+                notes: invoice.notes,
                 items: formattedItems
             }
         });

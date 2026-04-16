@@ -638,7 +638,8 @@ document.getElementById('btn-submit-bill').addEventListener('click', async () =>
     
     let subTotal = currentBill.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     const deliveryFee = parseFloat(document.getElementById('pos-delivery-fee').value) || 0;
-    let totalAmount = subTotal + deliveryFee;
+    const discount = parseFloat(document.getElementById('pos-discount').value) || 0;
+    let totalAmount = subTotal + deliveryFee - discount;
     const advancePayment = parseFloat(document.getElementById('pos-advance-payment').value) || 0;
     let balance = totalAmount - advancePayment;
     
@@ -646,9 +647,19 @@ document.getElementById('btn-submit-bill').addEventListener('click', async () =>
         items: currentBill,
         sub_total: subTotal,
         delivery_fee: deliveryFee,
+        discount: discount,
         total_amount: totalAmount,
         advance_payment: advancePayment,
-        balance: balance
+        balance: balance,
+        customer_name: document.getElementById('pos-cust-name').value || 'Walk-in Customer',
+        customer_phone: document.getElementById('pos-cust-phone').value || '',
+        customer_address: document.getElementById('pos-cust-address').value || '',
+        customer_email: document.getElementById('pos-cust-email').value || '',
+        payment_method: document.getElementById('pos-payment-method').value || 'Cash',
+        delivery_method: document.getElementById('pos-delivery-method').value || 'Pickup',
+        delivery_date: document.getElementById('pos-delivery-date').value || '',
+        delivery_tracking: document.getElementById('pos-delivery-tracking').value || '',
+        notes: document.getElementById('pos-notes').value || ''
     };
     
     try {
@@ -776,61 +787,78 @@ document.getElementById('btn-send-wa').addEventListener('click', () => {
     
     let subTotal = currentBill.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     const deliveryFee = parseFloat(document.getElementById('pos-delivery-fee').value) || 0;
-    const totalAmount = subTotal + deliveryFee;
+    const discount = parseFloat(document.getElementById('pos-discount').value) || 0;
+    const totalAmount = subTotal + deliveryFee - discount;
     const advancePayment = parseFloat(document.getElementById('pos-advance-payment').value) || 0;
     const balance = totalAmount - advancePayment;
     
-    let text = `*InvoicePro - New Bill*\n\n`;
+    const custName = document.getElementById('pos-cust-name').value || 'Customer';
+    const trackInfo = document.getElementById('pos-delivery-tracking').value;
+
+    let text = `*InvoicePro - New Order*\n\n`;
+    text += `Hello ${custName},\nHere are your order details:\n\n`;
+    
     currentBill.forEach(i => {
-        text += `${i.name} x ${i.quantity} = ${formatCurrency(i.price * i.quantity)}\n`;
+        text += `• ${i.name} (${i.quantity}) = ${formatCurrency(i.price * i.quantity)}\n`;
     });
+    
     text += `\n*Sub Total*: ${formatCurrency(subTotal)}\n`;
-    text += `*Delivery Fee*: ${formatCurrency(deliveryFee)}\n`;
+    if (deliveryFee > 0) text += `*Delivery Fee*: ${formatCurrency(deliveryFee)}\n`;
+    if (discount > 0) text += `*Discount*: -${formatCurrency(discount)}\n`;
     text += `*Total Amount*: ${formatCurrency(totalAmount)}\n`;
+    
     if (advancePayment > 0) {
-        text += `*Advance Payment*: ${formatCurrency(advancePayment)}\n`;
-        text += `*Balance*: ${formatCurrency(balance)}\n`;
+        text += `*Advance Paid*: ${formatCurrency(advancePayment)}\n`;
+        text += `*Balance Due*: ${formatCurrency(balance)}\n`;
     }
-    text += `\nThank You!`;
+    
+    if (trackInfo) {
+        text += `\n📦 *Tracking Number*: ${trackInfo}\n`;
+    }
+    text += `\nThank you for choosing us! 🤝`;
     
     const encoded = encodeURIComponent(text);
-    window.open(`https://wa.me/?text=${encoded}`, '_blank');
+    const custPhone = document.getElementById('pos-cust-phone').value;
+    const urlPhone = custPhone ? custPhone.replace(/\D/g,'') : '';
+    window.open(`https://wa.me/${urlPhone}?text=${encoded}`, '_blank');
 });
 
 function showInvoicePrintout(invoice) {
     document.getElementById('receipt-no').textContent = invoice.invoice_number;
     document.getElementById('receipt-date').textContent = invoice.date;
-    document.getElementById('receipt-time').textContent = invoice.time;
     
-    const tbody = document.querySelector('#receipt-items tbody');
+    document.getElementById('print-order-id').textContent = invoice.order_id || 'N/A';
+    document.getElementById('print-c-name').textContent = invoice.customer_name || 'Walk-in Customer';
+    document.getElementById('print-c-phone').textContent = invoice.customer_phone || 'N/A';
+    document.getElementById('print-c-address').textContent = invoice.customer_address || 'N/A';
+    document.getElementById('print-c-email').textContent = invoice.customer_email || 'N/A';
+    document.getElementById('print-pay-method').textContent = invoice.payment_method || 'Cash';
+    document.getElementById('print-del-method').textContent = invoice.delivery_method || 'Pickup';
+    document.getElementById('print-del-date').textContent = invoice.delivery_date || 'N/A';
+    document.getElementById('print-tracking').textContent = invoice.delivery_tracking || 'N/A';
+    document.getElementById('print-notes').textContent = invoice.notes || 'Thank you for your business!';
+    
+    const tbody = document.querySelector('#receipt-items');
     tbody.innerHTML = '';
     
     invoice.items.forEach(item => {
         const amt = item.price * item.quantity;
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>${item.product_name || item.name}</td>
-            <td>${item.quantity}</td>
-            <td>${item.price}</td>
-            <td>${amt}</td>
+            <td class="py-4 px-6 text-sm text-gray-900 font-medium whitespace-nowrap bg-white">${item.product_name || item.name}</td>
+            <td class="py-4 px-6 text-sm text-gray-600 text-center bg-white">${item.quantity}</td>
+            <td class="py-4 px-6 text-sm text-gray-600 text-right bg-white">${formatCurrency(item.price)}</td>
+            <td class="py-4 px-6 text-sm font-semibold text-gray-900 text-right bg-white">${formatCurrency(amt)}</td>
         `;
         tbody.appendChild(tr);
     });
     
-    const subTotalEl = document.getElementById('receipt-sub-total');
-    if (subTotalEl) subTotalEl.textContent = (invoice.sub_total || 0).toFixed(2);
-    
-    const deliveryEl = document.getElementById('receipt-delivery-fee');
-    if (deliveryEl) deliveryEl.textContent = (invoice.delivery_fee || 0).toFixed(2);
-    
-    const advanceEl = document.getElementById('receipt-advance-payment');
-    if (advanceEl) advanceEl.textContent = (invoice.advance_payment || 0).toFixed(2);
-    
-    const balanceEl = document.getElementById('receipt-balance');
-    if (balanceEl) balanceEl.textContent = (invoice.balance || 0).toFixed(2);
-    
-    const totalEl = document.getElementById('receipt-total-amount');
-    if (totalEl) totalEl.textContent = (invoice.total_amount || 0).toFixed(2);
+    document.getElementById('print-subtotal').textContent = formatCurrency(invoice.sub_total || 0);
+    document.getElementById('print-delivery-fee').textContent = formatCurrency(invoice.delivery_fee || 0);
+    document.getElementById('print-discount').textContent = formatCurrency(invoice.discount || 0);
+    document.getElementById('receipt-total-amount').textContent = formatCurrency(invoice.total_amount || 0);
+    document.getElementById('print-advance').textContent = formatCurrency(invoice.advance_payment || 0);
+    document.getElementById('print-balance').textContent = formatCurrency(invoice.balance || 0);
     
     // Automatically open modal and print dialog as per rules
     showModal(invoiceModal);
