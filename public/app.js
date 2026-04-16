@@ -101,6 +101,7 @@ document.getElementById('btn-logout').addEventListener('click', () => {
     localStorage.removeItem('pos_email');
     localStorage.removeItem('pos_whatsapp');
     localStorage.removeItem('pos_bank_details');
+    localStorage.removeItem('pos_profile_pic');
     checkAuth();
 });
 
@@ -139,7 +140,13 @@ async function checkAuth() {
         } else {
             document.getElementById('nav-item-admin').style.display = 'none';
             document.getElementById('nav-item-profile').style.display = 'block';
-            document.getElementById('user-avatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(currentBusiness || 'User')}&background=6366f1&color=fff`;
+            
+            const savedPic = localStorage.getItem('pos_profile_pic');
+            if (savedPic && savedPic !== 'null') {
+                document.getElementById('user-avatar').src = savedPic;
+            } else {
+                document.getElementById('user-avatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(currentBusiness || 'User')}&background=6366f1&color=fff`;
+            }
             document.getElementById('user-avatar').style.objectFit = 'cover';
         }
         
@@ -454,10 +461,18 @@ document.getElementById('profile-image-upload').addEventListener('change', funct
             const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
             currentProfileImageBase64 = dataUrl;
             document.getElementById('profile-image-preview').innerHTML = `<img src="${dataUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+            document.getElementById('btn-remove-profile-pic').style.display = 'block';
         }
         img.src = event.target.result;
     }
     reader.readAsDataURL(file);
+});
+
+document.getElementById('btn-remove-profile-pic').addEventListener('click', () => {
+    currentProfileImageBase64 = null;
+    document.getElementById('profile-image-preview').innerHTML = '<span style="color:var(--text-muted);font-size:12px;">+ Profile Pic</span>';
+    document.getElementById('btn-remove-profile-pic').style.display = 'none';
+    document.getElementById('profile-image-upload').value = '';
 });
 
 async function loadProfile() {
@@ -474,8 +489,16 @@ async function loadProfile() {
         currentProfileImageBase64 = data.profile_picture || null;
         if (data.profile_picture) {
             document.getElementById('profile-image-preview').innerHTML = `<img src="${data.profile_picture}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+            document.getElementById('btn-remove-profile-pic').style.display = 'block';
+            // Also sync top avatar
+            document.getElementById('user-avatar').src = data.profile_picture;
+            localStorage.setItem('pos_profile_pic', data.profile_picture);
         } else {
             document.getElementById('profile-image-preview').innerHTML = '<span style="color:var(--text-muted);font-size:12px;">+ Profile Pic</span>';
+            document.getElementById('btn-remove-profile-pic').style.display = 'none';
+            localStorage.removeItem('pos_profile_pic');
+            // Revert top avatar to initials
+            document.getElementById('user-avatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(currentBusiness || 'User')}&background=6366f1&color=fff`;
         }
     } catch(err) { console.error(err); }
 }
@@ -507,6 +530,13 @@ document.getElementById('profile-form').addEventListener('submit', async (e) => 
             localStorage.setItem('pos_email', currentEmail);
             localStorage.setItem('pos_whatsapp', currentWhatsApp);
             localStorage.setItem('pos_bank_details', currentBankDetails);
+            if (payload.profile_picture) {
+                localStorage.setItem('pos_profile_pic', payload.profile_picture);
+                document.getElementById('user-avatar').src = payload.profile_picture;
+            } else {
+                localStorage.removeItem('pos_profile_pic');
+                document.getElementById('user-avatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(currentBusiness)}&background=6366f1&color=fff`;
+            }
             document.getElementById('business-name-display').textContent = currentBusiness;
         } else {
             const errData = await res.json();
@@ -985,35 +1015,36 @@ document.getElementById('btn-send-wa').addEventListener('click', () => {
     let now = new Date();
     let dateStr = now.toLocaleDateString() + ' ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     
-    let text = `🌟 *${(currentBusiness || 'InvoicePro').toUpperCase()} - INVOICE* 🌟\n`;
-    text += `📅 *Date & Time:* ${dateStr}\n`;
-    text += `────────────────────\n`;
-    if (customerName) text += `👤 *Customer:* ${customerName}\n`;
-    if (customerNumber) text += `📞 *Contact:* ${customerNumber}\n`;
-    text += `────────────────────\n\n`;
+    let text = ` 🧾 *${(currentBusiness || 'InvoicePro').toUpperCase()} - INVOICE* 🧾\n`;
+    text += `🕒 *Date & Time:* ${dateStr}\n`;
+    text += `➖➖➖➖➖➖➖➖➖➖➖➖\n`;
+    if (customerName) {
+        text += `👤 *Customer:* ${customerName}\n\n`;
+    } else {
+        text += `\n`;
+    }
     
-    text += `🛒 *YOUR ORDER DETAILS* 🛒\n\n`;
+    text += `🛒 *ORDER DETAILS:*\n`;
     currentBill.forEach(i => {
-        text += `🔸 *${i.name}*\n   ${i.quantity} x ${formatCurrency(i.price)} = *${formatCurrency(i.price * i.quantity)}*\n`;
+        text += `🔹 ${i.name}\n      ${i.quantity} x ${formatCurrency(i.price)} = *${formatCurrency(i.price * i.quantity)}*\n`;
     });
     
-    text += `\n────────────────────\n`;
-    text += `💵 *Sub Total*: ${formatCurrency(subTotal)}\n`;
+    text += `➖➖➖➖➖➖➖➖➖➖➖➖\n`;
+    text += `📊 *Sub Total*: ${formatCurrency(subTotal)}\n`;
     text += `🚚 *Delivery Fee*: ${formatCurrency(deliveryFee)}\n`;
-    text += `🛍️ *TOTAL AMOUNT*: *${formatCurrency(totalAmount)}*\n`;
+    text += `💰 *Total Amount*: *${formatCurrency(totalAmount)}*\n`;
     if (advancePayment > 0) {
         text += `💳 *Advance Payment:* ${formatCurrency(advancePayment)}\n`;
-        text += `📉 *BALANCE DUE:* *${formatCurrency(balance)}*\n`;
+        text += `📉 *Balance Due:* *${formatCurrency(balance)}*\n`;
     }
-    text += `────────────────────\n\n`;
+    text += `➖➖➖➖➖➖➖➖➖➖➖➖\n\n`;
     
     if (currentBankDetails && currentBankDetails.trim() !== '') {
         text += `🏦 *BANK DETAILS FOR PAYMENT:*\n${currentBankDetails}\n\n`;
     }
     
-    text += `⏳ *Estimated delivery time:* 2–3 working days.\n\n`;
-    text += `✨ _Thank you for your order!_ ✨\n`;
-    text += `_We appreciate your business._`;
+    text += `📦 *Note:* It will take 3 to 5 working days to receive the next order.\n\n`;
+    text += `✨ _Thank you for your order!_ ✨`;
     
     const encoded = encodeURIComponent(text);
     window.open(`https://wa.me/?text=${encoded}`, '_blank');
