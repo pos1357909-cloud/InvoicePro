@@ -95,6 +95,15 @@ const initializeDatabase = async () => {
             await User.updateOne({ email: 'Admin' }, { role: 'admin', status: 'approved' });
             console.log('Admin role/status updated for existing admin user.');
         }
+
+        // Ensure legacy users without a status are grandfathered in as 'approved'
+        const legacyUpdate = await User.updateMany(
+            { status: { $exists: false } },
+            { $set: { status: 'approved' } }
+        );
+        if (legacyUpdate.modifiedCount > 0) {
+            console.log(`Grandfathered ${legacyUpdate.modifiedCount} legacy users to 'approved' status.`);
+        }
     } catch (err) {
         console.error('Error initializing default user:', err.message);
     }
