@@ -32,13 +32,10 @@ app.post('/api/auth/register', async (req, res) => {
             return res.status(400).json({ error: 'User already exists' });
         }
         
-        const user = await User.create({ email: String(email), password: String(password), business_name: String(business_name), whatsapp_number: String(whatsapp_number) });
+        const user = await User.create({ email: String(email), password: String(password), business_name: String(business_name), whatsapp_number: String(whatsapp_number), status: 'pending' });
         res.status(201).json({ 
-            token: user._id.toString(), 
-            business_name: user.business_name, 
-            role: user.role,
-            email: user.email,
-            whatsapp_number: user.whatsapp_number
+            message: 'Registration submitted successfully. Please wait for an Admin to approve your request.',
+            pending: true
         });
     } catch (err) {
         return res.status(500).json({ error: err.message });
@@ -55,6 +52,9 @@ app.post('/api/auth/login', async (req, res) => {
         const user = await User.findOne({ email: String(email), password: String(password) });
         if (!user) {
             return res.status(401).json({ error: 'Invalid credentials' });
+        }
+        if (user.status !== 'approved') {
+            return res.status(403).json({ error: 'Account pending admin approval or blocked.' });
         }
         res.json({ 
             token: user._id.toString(), 
@@ -78,7 +78,7 @@ const authMiddleware = async (req, res, next) => {
     
     try {
         const user = await User.findById(token);
-        if (!user) return res.status(401).json({ error: 'Unauthorized' });
+        if (!user || user.status !== 'approved') return res.status(401).json({ error: 'Unauthorized' });
         req.user = user;
         next();
     } catch (err) {
@@ -110,6 +110,36 @@ const adminMiddleware = (req, res, next) => {
     }
 };
 
+// ==== PROFILE API ====
+app.get('/api/profile', async (req, res) => {
+    try {
+        res.json({
+            email: req.user.email,
+            business_name: req.user.business_name,
+            whatsapp_number: req.user.whatsapp_number,
+            profile_picture: req.user.profile_picture,
+            bank_details: req.user.bank_details
+        });
+    } catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/profile', async (req, res) => {
+    const { email, business_name, whatsapp_number, profile_picture, bank_details, password } = req.body;
+    try {
+        const updateData = { email, business_name, whatsapp_number, profile_picture, bank_details };
+        if (password && password.trim() !== '') {
+            updateData.password = password;
+        }
+
+        await User.findByIdAndUpdate(req.user._id, updateData);
+        res.json({ message: 'Profile updated successfully' });
+    } catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+});
+
 app.get('/api/admin/users', adminMiddleware, async (req, res) => {
     try {
         const users = await User.find({ role: { $ne: 'admin' } }).select('-password');
@@ -119,7 +149,9 @@ app.get('/api/admin/users', adminMiddleware, async (req, res) => {
             business_name: u.business_name,
             whatsapp_number: u.whatsapp_number,
             marketplace_enabled: u.marketplace_enabled,
-            role: u.role
+            role: u.role,
+            status: u.status,
+            profile_picture: u.profile_picture
         }));
         res.json(mappedUsers);
     } catch (err) {
@@ -128,11 +160,11 @@ app.get('/api/admin/users', adminMiddleware, async (req, res) => {
 });
 
 app.put('/api/admin/users/:id', adminMiddleware, async (req, res) => {
-    const { email, business_name, whatsapp_number, marketplace_enabled } = req.body;
+    const { email, business_name, whatsapp_number, marketplace_enabled, status } = req.body;
     try {
         const user = await User.findByIdAndUpdate(
             req.params.id,
-            { email, business_name, whatsapp_number, marketplace_enabled },
+            { email, business_name, whatsapp_number, marketplace_enabled, status },
             { new: true }
         ).select('-password');
         if (!user) return res.status(404).json({ error: 'User not found' });

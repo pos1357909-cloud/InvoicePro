@@ -55,9 +55,14 @@ registerForm.addEventListener('submit', async (e) => {
             body: JSON.stringify({ email, password, business_name, whatsapp_number })
         });
         const data = await res.json();
-        if(!res.ok) throw new Error(data.error || 'Registration failed');
-        
-        loginSuccess(data.token, data.business_name, data.role, data.email, data.whatsapp_number);
+        if (data.pending) {
+            alert(data.message);
+            document.getElementById('switch-to-login').click();
+            document.getElementById('login-email').value = email;
+            registerForm.reset();
+        } else {
+            loginSuccess(data.token, data.business_name, data.role, data.email, data.whatsapp_number);
+        }
     } catch(err) { alert(err.message); }
 });
 
@@ -194,6 +199,7 @@ function setupNavigation() {
             if(target === 'pos-view') loadPOS();
             if(target === 'invoices-view') loadInvoices();
             if(target === 'reports-view') loadReports();
+            if(target === 'profile-view') loadProfile();
             if(target === 'admin-view') loadAdminUsers();
         });
     });
@@ -320,12 +326,13 @@ function setupModals() {
         const email = document.getElementById('admin-email').value;
         const whatsapp_number = document.getElementById('admin-whatsapp').value;
         const marketplace_enabled = document.getElementById('admin-marketplace-enabled').checked;
+        const status = document.getElementById('admin-status').value;
         
         try {
             await fetchAuth(`${API_BASE}/admin/users/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ business_name, email, whatsapp_number, marketplace_enabled })
+                body: JSON.stringify({ business_name, email, whatsapp_number, marketplace_enabled, status })
             });
             hideModal();
             loadAdminUsers();
@@ -383,6 +390,87 @@ function exportToCSV(filename, rows) {
         document.body.removeChild(link);
     }
 }
+
+// ==== PROFILE ====
+let currentProfileImageBase64 = null;
+
+document.getElementById('profile-image-upload').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        const img = new Image();
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 400; const MAX_HEIGHT = 400;
+            let width = img.width; let height = img.height;
+            if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } 
+            else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
+            canvas.width = width; canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+            currentProfileImageBase64 = dataUrl;
+            document.getElementById('profile-image-preview').innerHTML = `<img src="${dataUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+        }
+        img.src = event.target.result;
+    }
+    reader.readAsDataURL(file);
+});
+
+async function loadProfile() {
+    try {
+        const res = await fetchAuth(`${API_BASE}/profile`);
+        const data = await res.json();
+        
+        document.getElementById('profile-business-name').value = data.business_name || '';
+        document.getElementById('profile-email').value = data.email || '';
+        document.getElementById('profile-whatsapp').value = data.whatsapp_number || '';
+        document.getElementById('profile-bank-details').value = data.bank_details || '';
+        document.getElementById('profile-password').value = ''; // Leave password blank
+        
+        currentProfileImageBase64 = data.profile_picture || null;
+        if (data.profile_picture) {
+            document.getElementById('profile-image-preview').innerHTML = `<img src="${data.profile_picture}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+        } else {
+            document.getElementById('profile-image-preview').innerHTML = '<span style="color:var(--text-muted);font-size:12px;">+ Profile Pic</span>';
+        }
+    } catch(err) { console.error(err); }
+}
+
+document.getElementById('profile-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const payload = {
+        business_name: document.getElementById('profile-business-name').value,
+        email: document.getElementById('profile-email').value,
+        whatsapp_number: document.getElementById('profile-whatsapp').value,
+        bank_details: document.getElementById('profile-bank-details').value,
+        password: document.getElementById('profile-password').value,
+        profile_picture: currentProfileImageBase64
+    };
+    
+    try {
+        const res = await fetchAuth(`${API_BASE}/profile`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if(res.ok) {
+            alert('Profile updated successfully!');
+            currentBusiness = payload.business_name;
+            currentEmail = payload.email;
+            currentWhatsApp = payload.whatsapp_number;
+            localStorage.setItem('pos_business', currentBusiness);
+            localStorage.setItem('pos_email', currentEmail);
+            localStorage.setItem('pos_whatsapp', currentWhatsApp);
+            document.getElementById('business-name-display').textContent = currentBusiness;
+        } else {
+            const errData = await res.json();
+            alert('Error updating profile: ' + errData.error);
+        }
+    } catch(err) { console.error(err); }
+});
 
 // ==== DASHBOARD ====
 async function loadDashboard() {
@@ -1078,10 +1166,17 @@ async function loadAdminUsers() {
         
         adminUsersList.forEach(user => {
             const tr = document.createElement('tr');
+            
+            let statusBadge = '';
+            if (user.status === 'approved') statusBadge = '<span style="background:var(--success);color:#fff;padding:2px 8px;border-radius:4px;font-size:12px;">Approved</span>';
+            else if (user.status === 'pending') statusBadge = '<span style="background:var(--warning);color:#fff;padding:2px 8px;border-radius:4px;font-size:12px;">Pending</span>';
+            else statusBadge = '<span style="background:var(--danger);color:#fff;padding:2px 8px;border-radius:4px;font-size:12px;">Rejected</span>';
+
             tr.innerHTML = `
                 <td>${user.business_name}</td>
                 <td>${user.email}</td>
                 <td>${user.marketplace_enabled ? '<span class="text-success" style="color:var(--success);font-weight:600;">Enabled</span>' : '<span class="text-muted">Disabled</span>'}</td>
+                <td>${statusBadge}</td>
                 <td>
                     <button class="btn btn-outline btn-icon-only view-user-inventory-btn" data-id="${user.id}" title="View Inventory"><i class='bx bx-box'></i></button>
                     <button class="btn btn-outline btn-icon-only admin-edit-btn" data-id="${user.id}" title="Edit User"><i class='bx bx-edit'></i></button>
@@ -1128,6 +1223,7 @@ document.querySelector('#admin-users-table tbody').addEventListener('click', asy
             document.getElementById('admin-email').value = user.email;
             document.getElementById('admin-whatsapp').value = user.whatsapp_number || '';
             document.getElementById('admin-marketplace-enabled').checked = user.marketplace_enabled;
+            document.getElementById('admin-status').value = user.status || 'pending';
             showModal(adminUserModal);
         }
         return;
