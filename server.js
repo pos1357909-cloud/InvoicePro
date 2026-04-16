@@ -61,7 +61,8 @@ app.post('/api/auth/login', async (req, res) => {
             business_name: user.business_name, 
             role: user.role,
             email: user.email,
-            whatsapp_number: user.whatsapp_number
+            whatsapp_number: user.whatsapp_number,
+            bank_details: user.bank_details
         });
     } catch (err) {
         return res.status(500).json({ error: err.message });
@@ -96,6 +97,7 @@ app.get('/api/auth/me', async (req, res) => {
         business_name: req.user.business_name,
         email: req.user.email,
         whatsapp_number: req.user.whatsapp_number,
+        bank_details: req.user.bank_details,
         role: req.user.role
     });
 });
@@ -429,7 +431,8 @@ app.post('/api/invoices', async (req, res) => {
             business_details: {
                 name: user ? user.business_name : '',
                 email: user ? user.email : '',
-                whatsapp: user ? user.whatsapp_number : ''
+                whatsapp: user ? user.whatsapp_number : '',
+                bank_details: user ? user.bank_details : ''
             },
             sub_total: sub_total || 0,
             delivery_fee: delivery_fee || 0,

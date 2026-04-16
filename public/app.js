@@ -5,6 +5,7 @@ let currentBusiness = localStorage.getItem('pos_business') || '';
 let currentRole = localStorage.getItem('pos_role') || 'user';
 let currentEmail = localStorage.getItem('pos_email') || '';
 let currentWhatsApp = localStorage.getItem('pos_whatsapp') || '';
+let currentBankDetails = localStorage.getItem('pos_bank_details') || '';
 
 // ==== AUTH LOGIC ====
 const authOverlay = document.getElementById('auth-overlay');
@@ -37,7 +38,7 @@ loginForm.addEventListener('submit', async (e) => {
         const data = await res.json();
         if(!res.ok) throw new Error(data.error || 'Login failed');
         
-        loginSuccess(data.token, data.business_name, data.role, data.email, data.whatsapp_number);
+        loginSuccess(data.token, data.business_name, data.role, data.email, data.whatsapp_number, data.bank_details);
     } catch(err) { alert(err.message); }
 });
 
@@ -55,28 +56,35 @@ registerForm.addEventListener('submit', async (e) => {
             body: JSON.stringify({ email, password, business_name, whatsapp_number })
         });
         const data = await res.json();
+        
+        if (!res.ok) {
+            throw new Error(data.error || 'Registration failed');
+        }
+
         if (data.pending) {
             alert(data.message);
             document.getElementById('switch-to-login').click();
             document.getElementById('login-email').value = email;
             registerForm.reset();
         } else {
-            loginSuccess(data.token, data.business_name, data.role, data.email, data.whatsapp_number);
+            loginSuccess(data.token, data.business_name, data.role, data.email, data.whatsapp_number, data.bank_details);
         }
     } catch(err) { alert(err.message); }
 });
 
-function loginSuccess(token, businessName, role = 'user', email = '', whatsapp = '') {
+function loginSuccess(token, businessName, role = 'user', email = '', whatsapp = '', bankDetails = '') {
     authToken = token;
     currentBusiness = businessName;
     currentRole = role;
     currentEmail = email;
     currentWhatsApp = whatsapp;
+    currentBankDetails = bankDetails;
     localStorage.setItem('pos_token', token);
     localStorage.setItem('pos_business', businessName);
     localStorage.setItem('pos_role', role);
     localStorage.setItem('pos_email', email);
     localStorage.setItem('pos_whatsapp', whatsapp);
+    localStorage.setItem('pos_bank_details', bankDetails);
     checkAuth();
 }
 
@@ -86,11 +94,13 @@ document.getElementById('btn-logout').addEventListener('click', () => {
     currentRole = 'user';
     currentEmail = '';
     currentWhatsApp = '';
+    currentBankDetails = '';
     localStorage.removeItem('pos_token');
     localStorage.removeItem('pos_business');
     localStorage.removeItem('pos_role');
     localStorage.removeItem('pos_email');
     localStorage.removeItem('pos_whatsapp');
+    localStorage.removeItem('pos_bank_details');
     checkAuth();
 });
 
@@ -110,9 +120,11 @@ async function checkAuth() {
                     currentBusiness = data.business_name || currentBusiness;
                     currentEmail = data.email || '';
                     currentWhatsApp = data.whatsapp_number || '';
+                    currentBankDetails = data.bank_details || '';
                     localStorage.setItem('pos_business', currentBusiness);
                     localStorage.setItem('pos_email', currentEmail);
                     localStorage.setItem('pos_whatsapp', currentWhatsApp);
+                    localStorage.setItem('pos_bank_details', currentBankDetails);
                     document.getElementById('business-name-display').textContent = currentBusiness;
                 }
             } catch(e) { console.error('Silent auth refresh failed', e); }
@@ -300,16 +312,20 @@ function setupModals() {
         const url = id ? `${API_BASE}/products/${id}` : `${API_BASE}/products`;
         
         try {
-            await fetchAuth(url, {
+            const res = await fetchAuth(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData.error || 'Error saving product');
+            }
             hideModal();
             loadInventory();
         } catch (err) {
             console.error(err);
-            alert('Error saving product');
+            alert(err.message);
         }
     });
 
@@ -329,16 +345,20 @@ function setupModals() {
         const status = document.getElementById('admin-status').value;
         
         try {
-            await fetchAuth(`${API_BASE}/admin/users/${id}`, {
+            const res = await fetchAuth(`${API_BASE}/admin/users/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ business_name, email, whatsapp_number, marketplace_enabled, status })
             });
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData.error || 'Error updating user');
+            }
             hideModal();
             loadAdminUsers();
         } catch (err) {
             console.error(err);
-            alert('Error updating user');
+            alert(err.message);
         }
     });
 }
@@ -461,9 +481,11 @@ document.getElementById('profile-form').addEventListener('submit', async (e) => 
             currentBusiness = payload.business_name;
             currentEmail = payload.email;
             currentWhatsApp = payload.whatsapp_number;
+            currentBankDetails = payload.bank_details;
             localStorage.setItem('pos_business', currentBusiness);
             localStorage.setItem('pos_email', currentEmail);
             localStorage.setItem('pos_whatsapp', currentWhatsApp);
+            localStorage.setItem('pos_bank_details', currentBankDetails);
             document.getElementById('business-name-display').textContent = currentBusiness;
         } else {
             const errData = await res.json();
@@ -855,6 +877,12 @@ function getBillHTMLForExport() {
                 <div style="display:flex; justify-content:space-between; margin-bottom: 5px;"><span>Advance Payment:</span><span>${formatCurrency(advancePayment)}</span></div>
                 <div style="display:flex; justify-content:space-between; margin-bottom: 5px; font-weight: bold;"><span>Balance:</span><span>${formatCurrency(balance)}</span></div>
             </div>
+            ${currentBankDetails ? `
+            <div style="margin-top: 15px; font-size: 11px; text-align: left;">
+                <strong>Bank Details:</strong><br>
+                ${currentBankDetails.replace(/\n/g, '<br>')}
+            </div>
+            ` : ''}
             <div style="text-align: center; margin-top: 30px; font-size: 12px; color: #666;">
                 <p>Thank You!</p>
             </div>
@@ -955,6 +983,9 @@ document.getElementById('btn-send-wa').addEventListener('click', () => {
         text += `⚖️ *Balance Due*: *${formatCurrency(balance)}*\n`;
     }
     text += `➖➖➖➖➖➖➖➖➖➖➖➖\n\n`;
+    if (currentBankDetails && currentBankDetails.trim() !== '') {
+        text += `🏦 *BANK DETAILS:*\n${currentBankDetails}\n\n`;
+    }
     text += `📦 *Estimated delivery time:* 3–5 working days.\n\n`;
     text += `✨ _Thank you for your order!_ ✨`;
     
@@ -971,6 +1002,14 @@ function showInvoicePrintout(invoice) {
     document.getElementById('receipt-business-name').textContent = biz.name || currentBusiness || 'InvoicePro';
     document.getElementById('receipt-business-email').textContent = biz.email || '';
     document.getElementById('receipt-business-whatsapp').textContent = biz.whatsapp ? 'WA: ' + biz.whatsapp : '';
+    
+    if (biz.bank_details) {
+        document.getElementById('receipt-bank-details-wrapper').style.display = 'block';
+        document.getElementById('receipt-bank-details').innerHTML = biz.bank_details.replace(/\n/g, '<br>');
+    } else {
+        document.getElementById('receipt-bank-details-wrapper').style.display = 'none';
+        document.getElementById('receipt-bank-details').innerHTML = '';
+    }
     
     if (invoice.customer_name) {
         document.getElementById('receipt-customer-name-wrapper').style.display = 'block';

@@ -63,7 +63,8 @@ const InvoiceSchema = new mongoose.Schema({
     business_details: {
         name: String,
         email: String,
-        whatsapp: String
+        whatsapp: String,
+        bank_details: String
     },
     sub_total: { type: Number, default: 0.0 },
     delivery_fee: { type: Number, default: 0.0 },
