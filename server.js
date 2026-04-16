@@ -27,12 +27,12 @@ app.post('/api/auth/register', async (req, res) => {
     }
     
     try {
-        const existingUser = await User.findOne({ email });
+        const existingUser = await User.findOne({ email: String(email) });
         if (existingUser) {
             return res.status(400).json({ error: 'User already exists' });
         }
         
-        const user = await User.create({ email, password, business_name, whatsapp_number });
+        const user = await User.create({ email: String(email), password: String(password), business_name: String(business_name), whatsapp_number: String(whatsapp_number) });
         res.status(201).json({ 
             token: user._id.toString(), 
             business_name: user.business_name, 
@@ -50,7 +50,7 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     try {
-        const user = await User.findOne({ email, password });
+        const user = await User.findOne({ email: String(email), password: String(password) });
         if (!user) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
