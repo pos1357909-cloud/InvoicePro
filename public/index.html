@@ -13,12 +13,6 @@
     <!-- Scripts for PDF and Image generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            corePlugins: { preflight: false }
-        }
-    </script>
 </head>
 
 <body>
@@ -239,49 +233,13 @@
                                 <h2>Current Bill</h2>
                                 <p id="pos-bill-no">Auto Generate</p>
                             </div>
-                            <div class="bill-items" id="pos-bill-items" style="max-height: 250px; overflow-y: auto;">
+                            <div class="bill-items" id="pos-bill-items">
                                 <!-- Populated via JS -->
                             </div>
-
-                            <div style="padding: 10px; background: #f9fbfd; border-bottom: 1px solid var(--border); margin-bottom: 10px; font-size: 13px;">
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
-                                    <input type="text" id="pos-cust-name" class="form-control" placeholder="Customer Name *" style="height: 30px; font-size: 12px; padding: 4px;">
-                                    <input type="text" id="pos-cust-phone" class="form-control" placeholder="Customer Phone" style="height: 30px; font-size: 12px; padding: 4px;">
-                                </div>
-                                <input type="text" id="pos-cust-address" class="form-control" placeholder="Delivery Address" style="height: 30px; font-size: 12px; padding: 4px; margin-bottom: 8px;">
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
-                                    <input type="text" id="pos-cust-email" class="form-control" placeholder="Customer Email" style="height: 30px; font-size: 12px; padding: 4px;">
-                                    <select id="pos-payment-method" class="form-control" style="height: 30px; font-size: 12px; padding: 4px;">
-                                        <option value="Cash">Cash</option>
-                                        <option value="Bank Transfer">Bank Transfer</option>
-                                        <option value="Online">Online</option>
-                                        <option value="COD">COD</option>
-                                    </select>
-                                </div>
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
-                                    <select id="pos-delivery-method" class="form-control" style="height: 30px; font-size: 12px; padding: 4px;">
-                                        <option value="Courier">Courier</option>
-                                        <option value="Pickup">Pickup</option>
-                                    </select>
-                                    <input type="date" id="pos-delivery-date" class="form-control" style="height: 30px; font-size: 12px; padding: 4px;">
-                                </div>
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
-                                    <input type="text" id="pos-delivery-tracking" class="form-control" placeholder="Tracking Number" style="height: 30px; font-size: 12px; padding: 4px;">
-                                    <input type="text" id="pos-notes" class="form-control" placeholder="Notes (e.g. Thanks!)" style="height: 30px; font-size: 12px; padding: 4px;">
-                                </div>
-                            </div>
-                            
                             <div class="bill-summary">
                                 <div class="summary-row" style="margin-bottom: 5px; font-size: 14px;">
                                     <span>Sub Total</span>
                                     <span id="pos-sub-total">0.00</span>
-                                </div>
-                                <div class="summary-row"
-                                    style="margin-bottom: 5px; font-size: 14px; display: flex; justify-content: space-between; align-items: center;">
-                                    <span>Discount</span>
-                                    <input type="number" id="pos-discount" class="form-control"
-                                        style="width: 80px; height: 30px; text-align: right; padding: 4px;" value="0"
-                                        min="0">
                                 </div>
                                 <div class="summary-row"
                                     style="margin-bottom: 5px; font-size: 14px; display: flex; justify-content: space-between; align-items: center;">
@@ -525,160 +483,41 @@
                     <h3>Invoice Details</h3>
                     <button class="close-btn" id="btn-close-invoice-modal"><i class='bx bx-x'></i></button>
                 </div>
-                <div class="modal-body print-area" id="print-area" style="padding: 0; background: transparent;">
-                    <div class="receipt bg-white w-full max-w-4xl mx-auto rounded-none sm:rounded-xl shadow-none sm:shadow-2xl overflow-hidden font-sans border-0 sm:border border-gray-200">
-                        <div class="p-8 sm:p-12">
-                            <!-- Header Section -->
-                            <div class="flex flex-col sm:flex-row justify-between items-start gap-6 border-b border-gray-200 pb-8">
-                                <div class="flex items-center gap-4">
-                                    <!-- Store Logo Placeholder -->
-                                    <div id="print-logo-container" class="w-16 h-16 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg overflow-hidden shrink-0">
-                                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                                    </div>
-                                    <div>
-                                        <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight" id="print-b-name">InvoicePro</h1>
-                                        <p class="text-sm font-medium text-gray-500 mt-1" id="print-b-phone">+1 (555) 000-0000</p>
-                                        <p class="text-sm font-medium text-gray-500" id="print-b-email">contact@invoicepro.com</p>
-                                        <p class="text-xs text-gray-400 mt-1 uppercase tracking-wider font-semibold">Reg. Business</p>
-                                    </div>
-                                </div>
-                                <div class="text-left sm:text-right w-full sm:w-auto">
-                                    <div class="inline-block bg-indigo-50 text-indigo-700 px-4 py-2 rounded-lg mb-4 hidden sm:inline-block">
-                                        <span class="text-xl font-bold tracking-wider">INVOICE</span>
-                                    </div>
-                                    <div class="space-y-1">
-                                        <p class="text-sm text-gray-600 flex justify-between sm:justify-end gap-4">
-                                            <span class="font-medium text-gray-400 uppercase text-xs tracking-wider">Invoice No</span>
-                                            <span class="text-gray-900 font-semibold" id="receipt-no">#INV-000</span>
-                                        </p>
-                                        <p class="text-sm text-gray-600 flex justify-between sm:justify-end gap-4">
-                                            <span class="font-medium text-gray-400 uppercase text-xs tracking-wider">Order ID</span>
-                                            <span class="text-gray-900 font-semibold" id="print-order-id">#ORD-000</span>
-                                        </p>
-                                        <p class="text-sm text-gray-600 flex justify-between sm:justify-end gap-4">
-                                            <span class="font-medium text-gray-400 uppercase text-xs tracking-wider">Issue Date</span>
-                                            <span class="text-gray-900 font-semibold" id="receipt-date">YYYY-MM-DD</span>
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Details Grid -->
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 py-8 border-b border-gray-100">
-                                <div class="bg-gray-50 rounded-xl p-6 border border-gray-100">
-                                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Invoice To</h3>
-                                    <div class="space-y-2">
-                                        <p class="text-lg font-bold text-gray-900" id="print-c-name">Walk-in Customer</p>
-                                        <div class="flex items-center text-gray-600 text-sm gap-2">
-                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
-                                            <span id="print-c-phone">N/A</span>
-                                        </div>
-                                        <div class="flex items-center text-gray-600 text-sm gap-2">
-                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                                            <span id="print-c-email">N/A</span>
-                                        </div>
-                                        <div class="flex items-start text-gray-600 text-sm gap-2 mt-2">
-                                            <svg class="w-4 h-4 text-gray-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                                            <span id="print-c-address" class="leading-tight">N/A</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="bg-gray-50 rounded-xl p-6 border border-gray-100 flex flex-col justify-between">
-                                    <div>
-                                        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Payment & Delivery</h3>
-                                        <div class="space-y-3">
-                                            <div class="flex justify-between items-center text-sm">
-                                                <span class="text-gray-500 font-medium whitespace-nowrap">Payment Method:</span>
-                                                <span class="font-semibold text-gray-900 bg-white px-2 py-1 rounded border border-gray-200" id="print-pay-method">Cash</span>
-                                            </div>
-                                            <div class="flex justify-between items-center text-sm">
-                                                <span class="text-gray-500 font-medium whitespace-nowrap">Delivery Method:</span>
-                                                <span class="font-semibold text-gray-900 bg-white px-2 py-1 rounded border border-gray-200" id="print-del-method">Pickup</span>
-                                            </div>
-                                            <div class="flex justify-between items-center text-sm">
-                                                <span class="text-gray-500 font-medium whitespace-nowrap">Est. Delivery:</span>
-                                                <span class="font-semibold text-gray-900" id="print-del-date">N/A</span>
-                                            </div>
-                                            <div class="flex justify-between items-center text-sm">
-                                                <span class="text-gray-500 font-medium whitespace-nowrap">Tracking No:</span>
-                                                <span class="text-indigo-600 font-semibold font-mono" id="print-tracking">N/A</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Items Table -->
-                            <div class="mt-8 border border-gray-200 rounded-xl overflow-hidden bg-white">
-                                <table class="w-full text-left border-collapse">
-                                    <thead>
-                                        <tr class="bg-gray-50/80 border-b border-gray-200">
-                                            <th class="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider w-2/5">Item Description</th>
-                                            <th class="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider text-center">Qty</th>
-                                            <th class="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Unit Price</th>
-                                            <th class="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Total</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="receipt-items" class="divide-y divide-gray-100">
-                                        <!-- Populated via JS -->
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            <!-- Summary & Footer -->
-                            <div class="mt-8 flex flex-col md:flex-row justify-between items-start gap-8">
-                                <div class="w-full md:w-5/12 space-y-6">
-                                    <div>
-                                        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Terms & Notes</h3>
-                                        <p class="text-sm text-gray-600 bg-yellow-50 p-4 rounded-lg border border-yellow-100 italic" id="print-notes">
-                                            Goods once sold are not returnable. Thank you for your business!
-                                        </p>
-                                    </div>
-                                    <!-- Optional Signature Block -->
-                                    <div class="border-t-2 border-dashed border-gray-200 pt-16 w-48 mt-8 text-center text-sm text-gray-400 font-medium">
-                                        Authorized Signature
-                                    </div>
-                                </div>
-
-                                <div class="w-full md:w-1/2 bg-gray-50 rounded-xl p-6 border border-gray-100">
-                                    <div class="space-y-3 text-sm">
-                                        <div class="flex justify-between text-gray-600">
-                                            <span class="font-medium">Subtotal</span>
-                                            <span class="font-semibold text-gray-900" id="print-subtotal">Rs.0.00</span>
-                                        </div>
-                                        <div class="flex justify-between text-gray-600">
-                                            <span class="font-medium">Delivery Fee</span>
-                                            <span class="font-semibold text-gray-900" id="print-delivery-fee">Rs.0.00</span>
-                                        </div>
-                                        <div class="flex justify-between text-gray-600">
-                                            <span class="font-medium">Discount</span>
-                                            <span class="font-semibold text-red-600" id="print-discount">-Rs.0.00</span>
-                                        </div>
-                                        <div class="pt-4 border-t border-gray-200">
-                                            <div class="flex justify-between items-center text-lg">
-                                                <span class="font-bold text-gray-900">Total Amount</span>
-                                                <span class="font-black text-indigo-600 text-xl" id="receipt-total-amount">Rs.0.00</span>
-                                            </div>
-                                        </div>
-                                        <div class="pt-4 border-t border-gray-200 space-y-2">
-                                            <div class="flex justify-between text-gray-600">
-                                                <span class="font-medium">Advance Paid</span>
-                                                <span class="font-semibold text-gray-900" id="print-advance">Rs.0.00</span>
-                                            </div>
-                                            <div class="flex justify-between text-base bg-red-50 p-3 rounded-lg border border-red-100 mt-2">
-                                                <span class="font-bold text-red-800">Balance Due</span>
-                                                <span class="font-black text-red-700" id="print-balance">Rs.0.00</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Powered By Footer -->
-                            <div class="mt-12 pt-6 border-t border-gray-200 text-center flex items-center justify-between">
-                                <p class="text-xs text-gray-400 font-medium">Generated by InvoicePro System</p>
-                                <svg class="w-6 h-6 text-indigo-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/></svg>
-                            </div>
+                <div class="modal-body print-area" id="print-area">
+                    <div class="receipt">
+                        <div class="receipt-header">
+                            <h2>InvoicePro</h2>
+                            <p>Retail Shop POS</p>
+                            <p>----------------------------</p>
+                        </div>
+                        <div class="receipt-meta">
+                            <p>Invoice: <span id="receipt-no"></span></p>
+                            <p>Date: <span id="receipt-date"></span></p>
+                            <p>Time: <span id="receipt-time"></span></p>
+                        </div>
+                        <p>----------------------------</p>
+                        <table class="receipt-table" id="receipt-items">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Qty</th>
+                                    <th>Price</th>
+                                    <th>Amt</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Populated via JS -->
+                            </tbody>
+                        </table>
+                        <p>----------------------------</p>
+                        <div class="receipt-total">
+                            <span>TOTAL:</span>
+                            <span id="receipt-total-amount"></span>
+                        </div>
+                        <div class="receipt-footer">
+                            <p>Thank You!</p>
+                            <p>Visit Again</p>
+                            <p>----------------------------</p>
                         </div>
                     </div>
                 </div>
