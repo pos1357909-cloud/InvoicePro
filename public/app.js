@@ -132,8 +132,15 @@ async function checkAuth() {
         
         if (currentRole === 'admin') {
             document.getElementById('nav-item-admin').style.display = 'block';
+            document.getElementById('nav-item-profile').style.display = 'none';
+            document.getElementById('user-avatar').src = 'https://img.icons8.com/color/96/admin-settings-male.png';
+            document.getElementById('user-avatar').style.objectFit = 'contain';
+            document.getElementById('user-avatar').style.background = '#fff';
         } else {
             document.getElementById('nav-item-admin').style.display = 'none';
+            document.getElementById('nav-item-profile').style.display = 'block';
+            document.getElementById('user-avatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(currentBusiness || 'User')}&background=6366f1&color=fff`;
+            document.getElementById('user-avatar').style.objectFit = 'cover';
         }
         
         // Re-initialize data
