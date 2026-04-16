@@ -729,7 +729,7 @@ document.getElementById('btn-generate-pdf').addEventListener('click', () => {
     element.innerHTML = getBillHTMLForExport();
     html2pdf().from(element.firstElementChild).set({
         margin: 1,
-        filename: \`Bill_\${Date.now()}.pdf\`,
+        filename: `Bill_${Date.now()}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2 },
         jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
@@ -749,7 +749,7 @@ document.getElementById('btn-generate-image').addEventListener('click', async ()
         const imgParams = canvas.toDataURL("image/png");
         const a = document.createElement('a');
         a.href = imgParams;
-        a.download = \`Bill_\${Date.now()}.png\`;
+        a.download = `Bill_${Date.now()}.png`;
         a.click();
     } catch(err) {
         console.error(err);
@@ -774,21 +774,21 @@ document.getElementById('btn-send-wa').addEventListener('click', () => {
     const advancePayment = parseFloat(document.getElementById('pos-advance-payment').value) || 0;
     const balance = totalAmount - advancePayment;
     
-    let text = \`*InvoicePro - New Bill*\\n\\n\`;
+    let text = `*InvoicePro - New Bill*\n\n`;
     currentBill.forEach(i => {
-        text += \`\${i.name} x \${i.quantity} = \${formatCurrency(i.price * i.quantity)}\\n\`;
+        text += `${i.name} x ${i.quantity} = ${formatCurrency(i.price * i.quantity)}\n`;
     });
-    text += \`\\n*Sub Total*: \${formatCurrency(subTotal)}\\n\`;
-    text += \`*Delivery Fee*: \${formatCurrency(deliveryFee)}\\n\`;
-    text += \`*Total Amount*: \${formatCurrency(totalAmount)}\\n\`;
+    text += `\n*Sub Total*: ${formatCurrency(subTotal)}\n`;
+    text += `*Delivery Fee*: ${formatCurrency(deliveryFee)}\n`;
+    text += `*Total Amount*: ${formatCurrency(totalAmount)}\n`;
     if (advancePayment > 0) {
-        text += \`*Advance Payment*: \${formatCurrency(advancePayment)}\\n\`;
-        text += \`*Balance*: \${formatCurrency(balance)}\\n\`;
+        text += `*Advance Payment*: ${formatCurrency(advancePayment)}\n`;
+        text += `*Balance*: ${formatCurrency(balance)}\n`;
     }
-    text += \`\\nThank You!\`;
+    text += `\nThank You!`;
     
     const encoded = encodeURIComponent(text);
-    window.open(\`https://wa.me/?text=\${encoded}\`, '_blank');
+    window.open(`https://wa.me/?text=${encoded}`, '_blank');
 });
 
 function showInvoicePrintout(invoice) {
