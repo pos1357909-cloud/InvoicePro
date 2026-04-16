@@ -845,24 +845,30 @@ document.getElementById('btn-send-wa').addEventListener('click', () => {
     const customerName = document.getElementById('pos-customer-name').value;
     const customerNumber = document.getElementById('pos-customer-number').value;
     
-    let text = `*INVOICE*\n`;
-    text += `*${currentBusiness || 'InvoicePro'}*\n`;
-    if (currentEmail) text += `${currentEmail}\n`;
-    if (currentWhatsApp) text += `WA: ${currentWhatsApp}\n`;
-    text += `\n`;
-    if (customerName) text += `Customer: ${customerName}\n`;
-    if (customerNumber) text += `Contact: ${customerNumber}\n\n`;
+    let now = new Date();
+    let dateStr = now.toLocaleDateString() + ' ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    
+    let text = `🧾 *${(currentBusiness || 'InvoicePro').toUpperCase()} - INVOICE* 🧾\n`;
+    text += `🕒 *Date & Time:* ${dateStr}\n`;
+    text += `➖➖➖➖➖➖➖➖➖➖➖➖\n`;
+    if (customerName) text += `👤 *Customer:* ${customerName}\n\n`;
+    
+    text += `🛒 *ORDER DETAILS:*\n`;
     currentBill.forEach(i => {
-        text += `${i.name} x ${i.quantity} = ${formatCurrency(i.price * i.quantity)}\n`;
+        text += `🔹 ${i.name}\n      ${i.quantity} x ${formatCurrency(i.price)} = *${formatCurrency(i.price * i.quantity)}*\n`;
     });
-    text += `\n*Sub Total*: ${formatCurrency(subTotal)}\n`;
-    text += `*Delivery Fee*: ${formatCurrency(deliveryFee)}\n`;
-    text += `*Total Amount*: ${formatCurrency(totalAmount)}\n`;
+    
+    text += `➖➖➖➖➖➖➖➖➖➖➖➖\n`;
+    text += `📊 *Sub Total*: ${formatCurrency(subTotal)}\n`;
+    text += `🚚 *Delivery Fee*: ${formatCurrency(deliveryFee)}\n`;
+    text += `💰 *Total Amount*: *${formatCurrency(totalAmount)}*\n`;
     if (advancePayment > 0) {
-        text += `*Advance Payment*: ${formatCurrency(advancePayment)}\n`;
-        text += `*Balance*: ${formatCurrency(balance)}\n`;
+        text += `💵 *Advance Payment*: ${formatCurrency(advancePayment)}\n`;
+        text += `⚖️ *Balance Due*: *${formatCurrency(balance)}*\n`;
     }
-    text += `\nThank You!`;
+    text += `➖➖➖➖➖➖➖➖➖➖➖➖\n\n`;
+    text += `📦 *Estimated delivery time:* 3–5 working days.\n\n`;
+    text += `✨ _Thank you for your order!_ ✨`;
     
     const encoded = encodeURIComponent(text);
     window.open(`https://wa.me/?text=${encoded}`, '_blank');
