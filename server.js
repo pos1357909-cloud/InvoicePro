@@ -295,7 +295,11 @@ app.get('/api/invoices', async (req, res) => {
             invoice_number: inv.invoice_number,
             date: inv.date,
             time: inv.time,
+            sub_total: inv.sub_total,
+            delivery_fee: inv.delivery_fee,
             total_amount: inv.total_amount,
+            advance_payment: inv.advance_payment,
+            balance: inv.balance,
             owner_name: inv.user_id ? inv.user_id.business_name : 'Unknown'
         }));
         
@@ -316,7 +320,11 @@ app.get('/api/invoices/:id', async (req, res) => {
             invoice_number: invoice.invoice_number,
             date: invoice.date,
             time: invoice.time,
+            sub_total: invoice.sub_total,
+            delivery_fee: invoice.delivery_fee,
             total_amount: invoice.total_amount,
+            advance_payment: invoice.advance_payment,
+            balance: invoice.balance,
             items: invoice.items.map(item => ({
                 id: item._id ? item._id.toString() : null,
                 product_name: item.product_name,
@@ -332,8 +340,8 @@ app.get('/api/invoices/:id', async (req, res) => {
 });
 
 app.post('/api/invoices', async (req, res) => {
-    const { items, total_amount } = req.body;
-    if (!items || items.length === 0 || !total_amount) {
+    const { items, sub_total, delivery_fee, total_amount, advance_payment, balance } = req.body;
+    if (!items || items.length === 0 || total_amount === undefined) {
         return res.status(400).json({ error: 'Invalid invoice data' });
     }
 
@@ -358,7 +366,11 @@ app.post('/api/invoices', async (req, res) => {
             invoice_number,
             date,
             time,
+            sub_total: sub_total || 0,
+            delivery_fee: delivery_fee || 0,
             total_amount,
+            advance_payment: advance_payment || 0,
+            balance: balance || 0,
             items: formattedItems
         });
         
@@ -377,7 +389,11 @@ app.post('/api/invoices', async (req, res) => {
                 invoice_number,
                 date,
                 time,
-                total_amount,
+                sub_total: invoice.sub_total,
+                delivery_fee: invoice.delivery_fee,
+                total_amount: invoice.total_amount,
+                advance_payment: invoice.advance_payment,
+                balance: invoice.balance,
                 items: formattedItems
             }
         });

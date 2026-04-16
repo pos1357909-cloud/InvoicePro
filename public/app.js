@@ -639,10 +639,16 @@ document.getElementById('btn-submit-bill').addEventListener('click', async () =>
     let subTotal = currentBill.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     const deliveryFee = parseFloat(document.getElementById('pos-delivery-fee').value) || 0;
     let totalAmount = subTotal + deliveryFee;
+    const advancePayment = parseFloat(document.getElementById('pos-advance-payment').value) || 0;
+    let balance = totalAmount - advancePayment;
     
     const payload = {
         items: currentBill,
-        total_amount: totalAmount
+        sub_total: subTotal,
+        delivery_fee: deliveryFee,
+        total_amount: totalAmount,
+        advance_payment: advancePayment,
+        balance: balance
     };
     
     try {
@@ -799,10 +805,8 @@ function showInvoicePrintout(invoice) {
     const tbody = document.querySelector('#receipt-items tbody');
     tbody.innerHTML = '';
     
-    let total = 0;
     invoice.items.forEach(item => {
         const amt = item.price * item.quantity;
-        total += amt;
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${item.product_name || item.name}</td>
@@ -813,7 +817,20 @@ function showInvoicePrintout(invoice) {
         tbody.appendChild(tr);
     });
     
-    document.getElementById('receipt-total-amount').textContent = total.toFixed(2);
+    const subTotalEl = document.getElementById('receipt-sub-total');
+    if (subTotalEl) subTotalEl.textContent = (invoice.sub_total || 0).toFixed(2);
+    
+    const deliveryEl = document.getElementById('receipt-delivery-fee');
+    if (deliveryEl) deliveryEl.textContent = (invoice.delivery_fee || 0).toFixed(2);
+    
+    const advanceEl = document.getElementById('receipt-advance-payment');
+    if (advanceEl) advanceEl.textContent = (invoice.advance_payment || 0).toFixed(2);
+    
+    const balanceEl = document.getElementById('receipt-balance');
+    if (balanceEl) balanceEl.textContent = (invoice.balance || 0).toFixed(2);
+    
+    const totalEl = document.getElementById('receipt-total-amount');
+    if (totalEl) totalEl.textContent = (invoice.total_amount || 0).toFixed(2);
     
     // Automatically open modal and print dialog as per rules
     showModal(invoiceModal);
