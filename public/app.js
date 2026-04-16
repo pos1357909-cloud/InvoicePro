@@ -976,32 +976,37 @@ document.getElementById('btn-send-wa').addEventListener('click', () => {
     const customerNumber = document.getElementById('pos-customer-number').value;
     
     let now = new Date();
-    let dateStr = now.toLocaleDateString();
-    let timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    let dateStr = now.toLocaleDateString() + ' ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     
-    let text = `✨ *${(currentBusiness || 'InvoicePro').toUpperCase()} - INVOICE* ✨\n\n`;
-    text += `📅 *Date:* ${dateStr}\n`;
-    text += `⏰ *Time:* ${timeStr}\n`;
-    text += `➖➖➖➖➖➖➖➖➖➖➖➖\n`;
-    if (customerName) text += `👤 *Customer:* ${customerName}\n\n`;
+    let text = `🌟 *${(currentBusiness || 'InvoicePro').toUpperCase()} - INVOICE* 🌟\n`;
+    text += `📅 *Date & Time:* ${dateStr}\n`;
+    text += `────────────────────\n`;
+    if (customerName) text += `👤 *Customer:* ${customerName}\n`;
+    if (customerNumber) text += `📞 *Contact:* ${customerNumber}\n`;
+    text += `────────────────────\n\n`;
     
-    text += `🛒 *ORDER HIGHLIGHTS:*\n`;
+    text += `🛒 *YOUR ORDER DETAILS* 🛒\n\n`;
     currentBill.forEach(i => {
-        text += `🔹 *${i.name}*\n      ${i.quantity} x ${formatCurrency(i.price)} = *${formatCurrency(i.price * i.quantity)}*\n`;
+        text += `🔸 *${i.name}*\n   ${i.quantity} x ${formatCurrency(i.price)} = *${formatCurrency(i.price * i.quantity)}*\n`;
     });
     
-    text += `➖➖➖➖➖➖➖➖➖➖➖➖\n`;
-    text += `📝 *Sub Total*: ${formatCurrency(subTotal)}\n`;
-    if (deliveryFee > 0) text += `🚚 *Delivery Fee*: ${formatCurrency(deliveryFee)}\n`;
-    text += `💰 *TOTAL AMOUNT*: *${formatCurrency(totalAmount)}*\n`;
+    text += `\n────────────────────\n`;
+    text += `💵 *Sub Total*: ${formatCurrency(subTotal)}\n`;
+    text += `🚚 *Delivery Fee*: ${formatCurrency(deliveryFee)}\n`;
+    text += `🛍️ *TOTAL AMOUNT*: *${formatCurrency(totalAmount)}*\n`;
     if (advancePayment > 0) {
-        text += `💵 *Advance Payment*: ${formatCurrency(advancePayment)}\n`;
-        text += `⚖️ *BALANCE DUE*: *${formatCurrency(balance)}*\n`;
+        text += `💳 *Advance Payment:* ${formatCurrency(advancePayment)}\n`;
+        text += `📉 *BALANCE DUE:* *${formatCurrency(balance)}*\n`;
     }
-    text += `➖➖➖➖➖➖➖➖➖➖➖➖\n\n`;
+    text += `────────────────────\n\n`;
     
-    text += `📦 *Estimated delivery time:* 2–3 working days.\n\n`;
-    text += `_Thank you for your order!_`;
+    if (currentBankDetails && currentBankDetails.trim() !== '') {
+        text += `🏦 *BANK DETAILS FOR PAYMENT:*\n${currentBankDetails}\n\n`;
+    }
+    
+    text += `⏳ *Estimated delivery time:* 2–3 working days.\n\n`;
+    text += `✨ _Thank you for your order!_ ✨\n`;
+    text += `_We appreciate your business._`;
     
     const encoded = encodeURIComponent(text);
     window.open(`https://wa.me/?text=${encoded}`, '_blank');
