@@ -55,6 +55,13 @@ const InvoiceSchema = new mongoose.Schema({
     invoice_number: { type: String, required: true },
     date: { type: String, required: true }, // Format: YYYY-MM-DD
     time: { type: String, required: true }, // Format: HH:MM
+    customer_name: { type: String, default: '' },
+    customer_number: { type: String, default: '' },
+    business_details: {
+        name: String,
+        email: String,
+        whatsapp: String
+    },
     sub_total: { type: Number, default: 0.0 },
     delivery_fee: { type: Number, default: 0.0 },
     total_amount: { type: Number, default: 0.0 },

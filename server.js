@@ -295,6 +295,9 @@ app.get('/api/invoices', async (req, res) => {
             invoice_number: inv.invoice_number,
             date: inv.date,
             time: inv.time,
+            customer_name: inv.customer_name,
+            customer_number: inv.customer_number,
+            business_details: inv.business_details,
             sub_total: inv.sub_total,
             delivery_fee: inv.delivery_fee,
             total_amount: inv.total_amount,
@@ -320,6 +323,9 @@ app.get('/api/invoices/:id', async (req, res) => {
             invoice_number: invoice.invoice_number,
             date: invoice.date,
             time: invoice.time,
+            customer_name: invoice.customer_name,
+            customer_number: invoice.customer_number,
+            business_details: invoice.business_details,
             sub_total: invoice.sub_total,
             delivery_fee: invoice.delivery_fee,
             total_amount: invoice.total_amount,
@@ -340,7 +346,7 @@ app.get('/api/invoices/:id', async (req, res) => {
 });
 
 app.post('/api/invoices', async (req, res) => {
-    const { items, sub_total, delivery_fee, total_amount, advance_payment, balance } = req.body;
+    const { items, sub_total, delivery_fee, total_amount, advance_payment, balance, customer_name, customer_number } = req.body;
     
     if (!items || items.length === 0 || total_amount === undefined) {
         return res.status(400).json({ error: 'Invalid invoice data' });
@@ -350,6 +356,8 @@ app.post('/api/invoices', async (req, res) => {
     const date = today.toISOString().split('T')[0];
     const time = today.toTimeString().split(' ')[0].substring(0, 5); // HH:MM
     const invoice_number = 'INV-' + today.getTime().toString().slice(-6);
+
+    const user = await User.findById(req.user._id);
 
     const formattedItems = items.map(item => ({
         product_name: item.name,
@@ -367,6 +375,13 @@ app.post('/api/invoices', async (req, res) => {
             invoice_number,
             date,
             time,
+            customer_name: customer_name || '',
+            customer_number: customer_number || '',
+            business_details: {
+                name: user ? user.business_name : '',
+                email: user ? user.email : '',
+                whatsapp: user ? user.whatsapp_number : ''
+            },
             sub_total: sub_total || 0,
             delivery_fee: delivery_fee || 0,
             total_amount,
@@ -395,6 +410,9 @@ app.post('/api/invoices', async (req, res) => {
                 total_amount: invoice.total_amount,
                 advance_payment: invoice.advance_payment,
                 balance: invoice.balance,
+                customer_name: invoice.customer_name,
+                customer_number: invoice.customer_number,
+                business_details: invoice.business_details,
                 items: formattedItems
             }
         });
@@ -502,6 +520,12 @@ app.get('/api/public/store/:business_name', async (req, res) => {
 // Serves the public marketplace UI
 app.get('/:business_name', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'marketplace.html'));
+});
+
+// Global Error Handler for Express to prevent HTML errors
+app.use((err, req, res, next) => {
+    console.error(err);
+    res.status(500).json({ error: 'A server error occurred: ' + err.message });
 });
 
 // Export app for Vercel, listen for local development

@@ -233,6 +233,10 @@
                                 <h2>Current Bill</h2>
                                 <p id="pos-bill-no">Auto Generate</p>
                             </div>
+                            <div class="customer-info" style="margin-bottom: 10px;">
+                                <input type="text" id="pos-customer-name" class="form-control" placeholder="Customer Name (Optional)" style="margin-bottom: 5px; font-size: 14px; padding: 6px;">
+                                <input type="tel" id="pos-customer-number" class="form-control" placeholder="Customer Number (Optional)" style="font-size: 14px; padding: 6px;">
+                            </div>
                             <div class="bill-items" id="pos-bill-items">
                                 <!-- Populated via JS -->
                             </div>
@@ -486,14 +490,18 @@
                 <div class="modal-body print-area" id="print-area">
                     <div class="receipt">
                         <div class="receipt-header">
-                            <h2>InvoicePro</h2>
-                            <p>Retail Shop POS</p>
+                            <h2 style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">INVOICE</h2>
+                            <h3 id="receipt-business-name" style="margin-bottom: 2px;">InvoicePro</h3>
+                            <p id="receipt-business-email" style="font-size: 12px; margin-bottom: 2px;"></p>
+                            <p id="receipt-business-whatsapp" style="font-size: 12px; margin-bottom: 2px;"></p>
                             <p>----------------------------</p>
                         </div>
                         <div class="receipt-meta">
                             <p>Invoice: <span id="receipt-no"></span></p>
                             <p>Date: <span id="receipt-date"></span></p>
                             <p>Time: <span id="receipt-time"></span></p>
+                            <p id="receipt-customer-name-wrapper" style="display: none;">Customer: <span id="receipt-customer-name"></span></p>
+                            <p id="receipt-customer-number-wrapper" style="display: none;">Contact: <span id="receipt-customer-number"></span></p>
                         </div>
                         <p>----------------------------</p>
                         <table class="receipt-table" id="receipt-items">

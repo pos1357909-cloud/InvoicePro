@@ -641,6 +641,8 @@ document.getElementById('btn-submit-bill').addEventListener('click', async () =>
     let totalAmount = subTotal + deliveryFee;
     const advancePayment = parseFloat(document.getElementById('pos-advance-payment').value) || 0;
     let balance = totalAmount - advancePayment;
+    const customerName = document.getElementById('pos-customer-name').value;
+    const customerNumber = document.getElementById('pos-customer-number').value;
     
     const payload = {
         items: currentBill,
@@ -648,7 +650,9 @@ document.getElementById('btn-submit-bill').addEventListener('click', async () =>
         delivery_fee: deliveryFee,
         total_amount: totalAmount,
         advance_payment: advancePayment,
-        balance: balance
+        balance: balance,
+        customer_name: customerName,
+        customer_number: customerNumber
     };
     
     try {
@@ -669,6 +673,8 @@ document.getElementById('btn-submit-bill').addEventListener('click', async () =>
         currentBill = [];
         document.getElementById('pos-delivery-fee').value = '0';
         document.getElementById('pos-advance-payment').value = '0';
+        document.getElementById('pos-customer-name').value = '';
+        document.getElementById('pos-customer-number').value = '';
         updateBillUI();
         
         // Reload products cache
@@ -686,6 +692,8 @@ function getBillHTMLForExport() {
     const totalAmount = subTotal + deliveryFee;
     const advancePayment = parseFloat(document.getElementById('pos-advance-payment').value) || 0;
     const balance = totalAmount - advancePayment;
+    const customerName = document.getElementById('pos-customer-name').value;
+    const customerNumber = document.getElementById('pos-customer-number').value;
 
     let itemsHTML = currentBill.map(i => `
         <tr>
@@ -698,10 +706,16 @@ function getBillHTMLForExport() {
 
     return `
         <div style="padding: 20px; font-family: 'Inter', sans-serif; background: #fff; color: #000; width: 400px; margin: 0 auto; box-sizing: border-box;">
-            <div style="text-align: center; margin-bottom: 20px;">
-                <h2 style="margin:0;">InvoicePro</h2>
-                <p style="margin:5px 0;">Retail Bill</p>
+            <div style="text-align: center; margin-bottom: 15px;">
+                <h2 style="margin:0; font-size: 24px; font-weight: bold;">INVOICE</h2>
+                <p style="margin:5px 0; font-weight: bold;">${currentBusiness || 'InvoicePro'}</p>
             </div>
+            ${customerName || customerNumber ? `
+            <div style="margin-bottom: 15px; font-size: 14px; border-bottom: 1px dashed #ccc; padding-bottom: 10px;">
+                ${customerName ? `<p style="margin: 2px 0;">Customer: ${customerName}</p>` : ''}
+                ${customerNumber ? `<p style="margin: 2px 0;">Contact: ${customerNumber}</p>` : ''}
+            </div>
+            ` : ''}
             <table style="width: 100%; text-align: left; border-collapse: collapse; margin-bottom: 20px; font-size: 14px;">
                 <thead>
                     <tr>
@@ -768,6 +782,8 @@ document.getElementById('btn-reset-bill').addEventListener('click', () => {
     currentBill = [];
     document.getElementById('pos-delivery-fee').value = '0';
     document.getElementById('pos-advance-payment').value = '0';
+    document.getElementById('pos-customer-name').value = '';
+    document.getElementById('pos-customer-number').value = '';
     updateBillUI();
 });
 
@@ -779,8 +795,13 @@ document.getElementById('btn-send-wa').addEventListener('click', () => {
     const totalAmount = subTotal + deliveryFee;
     const advancePayment = parseFloat(document.getElementById('pos-advance-payment').value) || 0;
     const balance = totalAmount - advancePayment;
+    const customerName = document.getElementById('pos-customer-name').value;
+    const customerNumber = document.getElementById('pos-customer-number').value;
     
-    let text = `*InvoicePro - New Bill*\n\n`;
+    let text = `*INVOICE*\n`;
+    text += `*${currentBusiness || 'InvoicePro'}*\n\n`;
+    if (customerName) text += `Customer: ${customerName}\n`;
+    if (customerNumber) text += `Contact: ${customerNumber}\n\n`;
     currentBill.forEach(i => {
         text += `${i.name} x ${i.quantity} = ${formatCurrency(i.price * i.quantity)}\n`;
     });
@@ -801,6 +822,25 @@ function showInvoicePrintout(invoice) {
     document.getElementById('receipt-no').textContent = invoice.invoice_number;
     document.getElementById('receipt-date').textContent = invoice.date;
     document.getElementById('receipt-time').textContent = invoice.time;
+    
+    const biz = invoice.business_details || {};
+    document.getElementById('receipt-business-name').textContent = biz.name || currentBusiness || 'InvoicePro';
+    document.getElementById('receipt-business-email').textContent = biz.email || '';
+    document.getElementById('receipt-business-whatsapp').textContent = biz.whatsapp ? 'WA: ' + biz.whatsapp : '';
+    
+    if (invoice.customer_name) {
+        document.getElementById('receipt-customer-name-wrapper').style.display = 'block';
+        document.getElementById('receipt-customer-name').textContent = invoice.customer_name;
+    } else {
+        document.getElementById('receipt-customer-name-wrapper').style.display = 'none';
+    }
+    
+    if (invoice.customer_number) {
+        document.getElementById('receipt-customer-number-wrapper').style.display = 'block';
+        document.getElementById('receipt-customer-number').textContent = invoice.customer_number;
+    } else {
+        document.getElementById('receipt-customer-number-wrapper').style.display = 'none';
+    }
     
     const tbody = document.querySelector('#receipt-items tbody');
     tbody.innerHTML = '';
