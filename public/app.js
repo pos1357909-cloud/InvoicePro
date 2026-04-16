@@ -575,14 +575,34 @@ function updateBillQuantity(id, change) {
     }
 }
 
+function calculateCurrentBillExtras() {
+    let subTotal = currentBill.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const deliveryFeeInput = document.getElementById('pos-delivery-fee');
+    const deliveryFee = parseFloat(deliveryFeeInput ? deliveryFeeInput.value : 0) || 0;
+    
+    const totalAmount = subTotal + deliveryFee;
+    
+    const advancePaymentInput = document.getElementById('pos-advance-payment');
+    const advancePayment = parseFloat(advancePaymentInput ? advancePaymentInput.value : 0) || 0;
+    
+    const balance = totalAmount - advancePayment;
+    
+    const subTotalEl = document.getElementById('pos-sub-total');
+    if(subTotalEl) subTotalEl.textContent = formatCurrency(subTotal);
+    
+    const totalEl = document.getElementById('pos-total-amount');
+    if(totalEl) totalEl.textContent = formatCurrency(totalAmount);
+    
+    const balanceEl = document.getElementById('pos-balance');
+    if(balanceEl) balanceEl.textContent = formatCurrency(balance);
+}
+
 function updateBillUI() {
     const itemsContainer = document.getElementById('pos-bill-items');
     itemsContainer.innerHTML = '';
-    let total = 0;
     
     currentBill.forEach(item => {
         const amount = item.price * item.quantity;
-        total += amount;
         
         const div = document.createElement('div');
         div.className = 'bill-item';
@@ -603,8 +623,12 @@ function updateBillUI() {
         itemsContainer.appendChild(div);
     });
     
-    document.getElementById('pos-total-amount').textContent = formatCurrency(total);
+    calculateCurrentBillExtras();
 }
+
+// Add event listeners for the extra fields
+document.getElementById('pos-delivery-fee').addEventListener('input', calculateCurrentBillExtras);
+document.getElementById('pos-advance-payment').addEventListener('input', calculateCurrentBillExtras);
 
 document.getElementById('btn-submit-bill').addEventListener('click', async () => {
     if (currentBill.length === 0) {
@@ -612,11 +636,13 @@ document.getElementById('btn-submit-bill').addEventListener('click', async () =>
         return;
     }
     
-    let total = currentBill.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    let subTotal = currentBill.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const deliveryFee = parseFloat(document.getElementById('pos-delivery-fee').value) || 0;
+    let totalAmount = subTotal + deliveryFee;
     
     const payload = {
         items: currentBill,
-        total_amount: total
+        total_amount: totalAmount
     };
     
     try {
@@ -635,6 +661,8 @@ document.getElementById('btn-submit-bill').addEventListener('click', async () =>
         
         // Clear bill
         currentBill = [];
+        document.getElementById('pos-delivery-fee').value = '0';
+        document.getElementById('pos-advance-payment').value = '0';
         updateBillUI();
         
         // Reload products cache
@@ -644,6 +672,123 @@ document.getElementById('btn-submit-bill').addEventListener('click', async () =>
         console.error(err);
         alert('Error saving bill');
     }
+});
+
+function getBillHTMLForExport() {
+    let subTotal = currentBill.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const deliveryFee = parseFloat(document.getElementById('pos-delivery-fee').value) || 0;
+    const totalAmount = subTotal + deliveryFee;
+    const advancePayment = parseFloat(document.getElementById('pos-advance-payment').value) || 0;
+    const balance = totalAmount - advancePayment;
+
+    let itemsHTML = currentBill.map(i => `
+        <tr>
+            <td style="padding:4px;border-bottom:1px solid #eee;">${i.name}</td>
+            <td style="padding:4px;border-bottom:1px solid #eee;">${i.quantity}</td>
+            <td style="padding:4px;border-bottom:1px solid #eee;">${formatCurrency(i.price)}</td>
+            <td style="padding:4px;border-bottom:1px solid #eee;text-align:right;">${formatCurrency(i.price * i.quantity)}</td>
+        </tr>
+    `).join('');
+
+    return `
+        <div style="padding: 20px; font-family: 'Inter', sans-serif; background: #fff; color: #000; width: 400px; margin: 0 auto; box-sizing: border-box;">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h2 style="margin:0;">InvoicePro</h2>
+                <p style="margin:5px 0;">Retail Bill</p>
+            </div>
+            <table style="width: 100%; text-align: left; border-collapse: collapse; margin-bottom: 20px; font-size: 14px;">
+                <thead>
+                    <tr>
+                        <th style="padding:4px;border-bottom:1px solid #ccc;">Item</th>
+                        <th style="padding:4px;border-bottom:1px solid #ccc;">Qty</th>
+                        <th style="padding:4px;border-bottom:1px solid #ccc;">Price</th>
+                        <th style="padding:4px;border-bottom:1px solid #ccc;text-align:right;">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${itemsHTML}
+                </tbody>
+            </table>
+            <div style="border-top:1px solid #000; padding-top: 10px; font-size: 14px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom: 5px;"><span>Sub Total:</span><span>${formatCurrency(subTotal)}</span></div>
+                <div style="display:flex; justify-content:space-between; margin-bottom: 5px;"><span>Delivery Fee:</span><span>${formatCurrency(deliveryFee)}</span></div>
+                <div style="display:flex; justify-content:space-between; margin-bottom: 5px; font-weight: bold; font-size: 16px;"><span>Total Amount:</span><span>${formatCurrency(totalAmount)}</span></div>
+                <div style="display:flex; justify-content:space-between; margin-bottom: 5px;"><span>Advance Payment:</span><span>${formatCurrency(advancePayment)}</span></div>
+                <div style="display:flex; justify-content:space-between; margin-bottom: 5px; font-weight: bold;"><span>Balance:</span><span>${formatCurrency(balance)}</span></div>
+            </div>
+            <div style="text-align: center; margin-top: 30px; font-size: 12px; color: #666;">
+                <p>Thank You!</p>
+            </div>
+        </div>
+    `;
+}
+
+document.getElementById('btn-generate-pdf').addEventListener('click', () => {
+    if (currentBill.length === 0) { alert('Bill is empty!'); return; }
+    const element = document.createElement('div');
+    element.innerHTML = getBillHTMLForExport();
+    html2pdf().from(element.firstElementChild).set({
+        margin: 1,
+        filename: \`Bill_\${Date.now()}.pdf\`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+    }).save();
+});
+
+document.getElementById('btn-generate-image').addEventListener('click', async () => {
+    if (currentBill.length === 0) { alert('Bill is empty!'); return; }
+    const element = document.createElement('div');
+    element.innerHTML = getBillHTMLForExport();
+    element.style.position = 'absolute';
+    element.style.top = '-9999px';
+    document.body.appendChild(element);
+    
+    try {
+        const canvas = await html2canvas(element.firstElementChild);
+        const imgParams = canvas.toDataURL("image/png");
+        const a = document.createElement('a');
+        a.href = imgParams;
+        a.download = \`Bill_\${Date.now()}.png\`;
+        a.click();
+    } catch(err) {
+        console.error(err);
+    } finally {
+        document.body.removeChild(element);
+    }
+});
+
+document.getElementById('btn-reset-bill').addEventListener('click', () => {
+    currentBill = [];
+    document.getElementById('pos-delivery-fee').value = '0';
+    document.getElementById('pos-advance-payment').value = '0';
+    updateBillUI();
+});
+
+document.getElementById('btn-send-wa').addEventListener('click', () => {
+    if (currentBill.length === 0) { alert('Bill is empty!'); return; }
+    
+    let subTotal = currentBill.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const deliveryFee = parseFloat(document.getElementById('pos-delivery-fee').value) || 0;
+    const totalAmount = subTotal + deliveryFee;
+    const advancePayment = parseFloat(document.getElementById('pos-advance-payment').value) || 0;
+    const balance = totalAmount - advancePayment;
+    
+    let text = \`*InvoicePro - New Bill*\\n\\n\`;
+    currentBill.forEach(i => {
+        text += \`\${i.name} x \${i.quantity} = \${formatCurrency(i.price * i.quantity)}\\n\`;
+    });
+    text += \`\\n*Sub Total*: \${formatCurrency(subTotal)}\\n\`;
+    text += \`*Delivery Fee*: \${formatCurrency(deliveryFee)}\\n\`;
+    text += \`*Total Amount*: \${formatCurrency(totalAmount)}\\n\`;
+    if (advancePayment > 0) {
+        text += \`*Advance Payment*: \${formatCurrency(advancePayment)}\\n\`;
+        text += \`*Balance*: \${formatCurrency(balance)}\\n\`;
+    }
+    text += \`\\nThank You!\`;
+    
+    const encoded = encodeURIComponent(text);
+    window.open(\`https://wa.me/?text=\${encoded}\`, '_blank');
 });
 
 function showInvoicePrintout(invoice) {

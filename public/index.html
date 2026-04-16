@@ -9,6 +9,9 @@
     <!-- Boxicons for modern icons -->
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link rel="stylesheet" href="/style.css">
+    <!-- Scripts for PDF and Image generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
     
@@ -225,11 +228,34 @@
                             <!-- Populated via JS -->
                         </div>
                         <div class="bill-summary">
-                            <div class="summary-row total">
-                                <span>TOTAL</span>
+                            <div class="summary-row" style="margin-bottom: 5px; font-size: 14px;">
+                                <span>Sub Total</span>
+                                <span id="pos-sub-total">0.00</span>
+                            </div>
+                            <div class="summary-row" style="margin-bottom: 5px; font-size: 14px; display: flex; justify-content: space-between; align-items: center;">
+                                <span>Delivery Fee</span>
+                                <input type="number" id="pos-delivery-fee" class="form-control" style="width: 80px; height: 30px; text-align: right; padding: 4px;" value="0" min="0">
+                            </div>
+                            <div class="summary-row total" style="margin-bottom: 10px;">
+                                <span>Total Amount</span>
                                 <span id="pos-total-amount">0.00</span>
                             </div>
-                            <button class="btn btn-primary btn-block btn-lg" id="btn-submit-bill">Submit Bill & Print</button>
+                            <div class="summary-row" style="margin-bottom: 5px; font-size: 14px; display: flex; justify-content: space-between; align-items: center;">
+                                <span>Advance Payment</span>
+                                <input type="number" id="pos-advance-payment" class="form-control" style="width: 80px; height: 30px; text-align: right; padding: 4px;" value="0" min="0">
+                            </div>
+                            <div class="summary-row" style="margin-bottom: 15px; font-size: 16px;">
+                                <span>Balance</span>
+                                <span id="pos-balance" style="font-weight: bold; color: var(--primary);">0.00</span>
+                            </div>
+                            <button class="btn btn-primary btn-block btn-lg" id="btn-submit-bill" style="margin-bottom: 15px;">Submit Bill & Print</button>
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                <button class="btn btn-outline btn-sm" id="btn-generate-pdf" style="font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 5px;"><i class='bx bxs-file-pdf'></i> PDF</button>
+                                <button class="btn btn-outline btn-sm" id="btn-generate-image" style="font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 5px;"><i class='bx bxs-image'></i> Image</button>
+                                <button class="btn btn-outline btn-sm" id="btn-reset-bill" style="font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 5px;"><i class='bx bx-reset'></i> Reset</button>
+                                <button class="btn btn-secondary btn-sm" id="btn-send-wa" style="font-size: 12px; background: #25D366; color: white; border: none; display: flex; align-items: center; justify-content: center; gap: 5px;"><i class='bx bxl-whatsapp'></i> WA</button>
+                            </div>
                         </div>
                     </div>
                 </div>
