@@ -820,7 +820,7 @@ function updateBillUI() {
 document.getElementById('pos-delivery-fee').addEventListener('input', calculateCurrentBillExtras);
 document.getElementById('pos-advance-payment').addEventListener('input', calculateCurrentBillExtras);
 
-document.getElementById('btn-submit-bill').addEventListener('click', async () => {
+async function handleBillSubmission(action) {
     if (currentBill.length === 0) {
         alert('Bill is empty!');
         return;
@@ -855,11 +855,20 @@ document.getElementById('btn-submit-bill').addEventListener('click', async () =>
         if (!res.ok) throw new Error('Failed to create invoice');
         
         const data = await res.json();
+        const invoice = data.invoice;
         
-        // Print
-        showInvoicePrintout(data.invoice);
+        // Execute specific action after saving
+        if (action === 'submit') {
+            showInvoicePrintout(invoice);
+        } else if (action === 'pdf') {
+            await downloadPDF(invoice);
+        } else if (action === 'image') {
+            await downloadImage(invoice);
+        } else if (action === 'whatsapp') {
+            shareOnWhatsApp(invoice);
+        }
         
-        // Clear bill
+        // Clear bill and reset UI components
         currentBill = [];
         document.getElementById('pos-delivery-fee').value = '0';
         document.getElementById('pos-advance-payment').value = '0';
@@ -867,27 +876,19 @@ document.getElementById('btn-submit-bill').addEventListener('click', async () =>
         document.getElementById('pos-customer-number').value = '';
         updateBillUI();
         
-        // Reload products cache
+        // Reload products cache to reflect stock updates
         fetchAuth(`${API_BASE}/products`).then(r => r.json()).then(p => products = p);
         
     } catch (err) {
         console.error(err);
-        alert('Error saving bill');
+        alert('Error saving bill: ' + err.message);
     }
-});
+}
 
-function getBillHTMLForExport() {
-    let subTotal = currentBill.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const deliveryFee = parseFloat(document.getElementById('pos-delivery-fee').value) || 0;
-    const totalAmount = subTotal + deliveryFee;
-    const advancePayment = parseFloat(document.getElementById('pos-advance-payment').value) || 0;
-    const balance = totalAmount - advancePayment;
-    const customerName = document.getElementById('pos-customer-name').value;
-    const customerNumber = document.getElementById('pos-customer-number').value;
-
-    let itemsHTML = currentBill.map(i => `
+function getInvoiceHTML(invoice) {
+    let itemsHTML = invoice.items.map(i => `
         <tr>
-            <td style="padding:4px;border-bottom:1px solid #eee;">${i.name}</td>
+            <td style="padding:4px;border-bottom:1px solid #eee;">${i.product_name}</td>
             <td style="padding:4px;border-bottom:1px solid #eee;">${i.quantity}</td>
             <td style="padding:4px;border-bottom:1px solid #eee;">${formatCurrency(i.price)}</td>
             <td style="padding:4px;border-bottom:1px solid #eee;text-align:right;">${formatCurrency(i.price * i.quantity)}</td>
@@ -901,11 +902,12 @@ function getBillHTMLForExport() {
                 <p style="margin:5px 0; font-weight: bold; font-size: 18px;">${currentBusiness || 'InvoicePro'}</p>
                 ${currentEmail ? `<p style="margin:2px 0; font-size: 12px; color: #555;">${currentEmail}</p>` : ''}
                 ${currentWhatsApp ? `<p style="margin:2px 0; font-size: 12px; color: #555;">WA: ${currentWhatsApp}</p>` : ''}
+                <p style="margin:2px 0; font-size: 12px; color: #555;">#${invoice.invoice_number} | ${invoice.date} ${invoice.time}</p>
             </div>
-            ${customerName || customerNumber ? `
+            ${invoice.customer_name || invoice.customer_number ? `
             <div style="margin-bottom: 15px; font-size: 14px; border-bottom: 1px dashed #ccc; padding-bottom: 10px;">
-                ${customerName ? `<p style="margin: 2px 0;">Customer: ${customerName}</p>` : ''}
-                ${customerNumber ? `<p style="margin: 2px 0;">Contact: ${customerNumber}</p>` : ''}
+                ${invoice.customer_name ? `<p style="margin: 2px 0;">Customer: ${invoice.customer_name}</p>` : ''}
+                ${invoice.customer_number ? `<p style="margin: 2px 0;">Contact: ${invoice.customer_number}</p>` : ''}
             </div>
             ` : ''}
             <table style="width: 100%; text-align: left; border-collapse: collapse; margin-bottom: 20px; font-size: 14px;">
@@ -922,11 +924,11 @@ function getBillHTMLForExport() {
                 </tbody>
             </table>
             <div style="border-top:1px solid #000; padding-top: 10px; font-size: 14px;">
-                <div style="display:flex; justify-content:space-between; margin-bottom: 5px;"><span>Sub Total:</span><span>${formatCurrency(subTotal)}</span></div>
-                <div style="display:flex; justify-content:space-between; margin-bottom: 5px;"><span>Delivery Fee:</span><span>${formatCurrency(deliveryFee)}</span></div>
-                <div style="display:flex; justify-content:space-between; margin-bottom: 5px; font-weight: bold; font-size: 16px;"><span>Total Amount:</span><span>${formatCurrency(totalAmount)}</span></div>
-                <div style="display:flex; justify-content:space-between; margin-bottom: 5px;"><span>Advance Payment:</span><span>${formatCurrency(advancePayment)}</span></div>
-                <div style="display:flex; justify-content:space-between; margin-bottom: 5px; font-weight: bold;"><span>Balance:</span><span>${formatCurrency(balance)}</span></div>
+                <div style="display:flex; justify-content:space-between; margin-bottom: 5px;"><span>Sub Total:</span><span>${formatCurrency(invoice.sub_total)}</span></div>
+                <div style="display:flex; justify-content:space-between; margin-bottom: 5px;"><span>Delivery Fee:</span><span>${formatCurrency(invoice.delivery_fee)}</span></div>
+                <div style="display:flex; justify-content:space-between; margin-bottom: 5px; font-weight: bold; font-size: 16px;"><span>Total Amount:</span><span>${formatCurrency(invoice.total_amount)}</span></div>
+                <div style="display:flex; justify-content:space-between; margin-bottom: 5px;"><span>Advance Payment:</span><span>${formatCurrency(invoice.advance_payment)}</span></div>
+                <div style="display:flex; justify-content:space-between; margin-bottom: 5px; font-weight: bold;"><span>Balance:</span><span>${formatCurrency(invoice.balance)}</span></div>
             </div>
             ${currentBankDetails ? `
             <div style="margin-top: 15px; font-size: 11px; text-align: left;">
@@ -941,56 +943,77 @@ function getBillHTMLForExport() {
     `;
 }
 
-document.getElementById('btn-generate-pdf').addEventListener('click', async () => {
-    if (currentBill.length === 0) { alert('Bill is empty!'); return; }
+async function downloadPDF(invoice) {
     const element = document.createElement('div');
-    element.innerHTML = getBillHTMLForExport();
+    element.innerHTML = getInvoiceHTML(invoice);
     element.style.position = 'absolute';
     element.style.top = '-9999px';
     document.body.appendChild(element);
-    
-    // Slight delay to ensure DOM renderer registers layout before PDF snapshot
     await new Promise(r => setTimeout(r, 100));
-    
     try {
         await html2pdf().from(element.firstElementChild).set({
             margin: 1,
-            filename: `Bill_${Date.now()}.pdf`,
+            filename: `Invoice_${invoice.invoice_number}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 2 },
             jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
         }).save();
-    } catch(err) {
-        console.error(err);
-        alert('Failed to generate PDF');
-    } finally {
-        document.body.removeChild(element);
-    }
-});
+    } catch(err) { console.error(err); alert('Failed to generate PDF'); }
+    finally { document.body.removeChild(element); }
+}
 
-document.getElementById('btn-generate-image').addEventListener('click', async () => {
-    if (currentBill.length === 0) { alert('Bill is empty!'); return; }
+async function downloadImage(invoice) {
     const element = document.createElement('div');
-    element.innerHTML = getBillHTMLForExport();
+    element.innerHTML = getInvoiceHTML(invoice);
     element.style.position = 'absolute';
     element.style.top = '-9999px';
     document.body.appendChild(element);
-    
-    await new Promise(r => setTimeout(r, 100)); // Delay for DOM render
-    
+    await new Promise(r => setTimeout(r, 100));
     try {
         const canvas = await html2canvas(element.firstElementChild);
-        const imgParams = canvas.toDataURL("image/png");
         const a = document.createElement('a');
-        a.href = imgParams;
-        a.download = `Bill_${Date.now()}.png`;
+        a.href = canvas.toDataURL("image/png");
+        a.download = `Invoice_${invoice.invoice_number}.png`;
         a.click();
-    } catch(err) {
-        console.error(err);
-    } finally {
-        document.body.removeChild(element);
-    }
-});
+    } catch(err) { console.error(err); }
+    finally { document.body.removeChild(element); }
+}
+
+function shareOnWhatsApp(invoice) {
+    const lineShort = "--------------------------------------------------------";
+    const lineLong = "-------------------------------------------------------------------------------------------";
+    
+    let text = `*INVOICE* \n`;
+    text += `*${(currentBusiness || 'Business Name')}*\n`;
+    text += ` ${invoice.date} - ${invoice.time}\n`;
+    text += `${lineShort}\n`;
+    text += `👤 Customer: ${invoice.customer_name || ''}\n`;
+    text += `${lineShort}\n`;
+    
+    text += `🛒*ORDER DETAILS :*\n`;
+    invoice.items.forEach(i => {
+        text += `▫️ ${i.product_name}\n      ${i.quantity} x ${formatCurrency(i.price)} = *${formatCurrency(i.subtotal)}*\n`;
+    });
+    
+    text += `${lineShort}\n`;
+    text += `💰 Subtotal: ${formatCurrency(invoice.sub_total)}\n`;
+    text += `🚚 Delivery: ${formatCurrency(invoice.delivery_fee)}\n`;
+    text += `🧮 *Total:* ${formatCurrency(invoice.total_amount)}\n`;
+    text += `💵 Advance: ${formatCurrency(invoice.advance_payment)}\n`;
+    text += `⚖️ *Balance Due:* *${formatCurrency(invoice.balance)}*\n`;
+    text += `${lineLong}\n`;
+    text += `📝 *Note :* ⏳ Estimated delivery time: 2–3 working days.\n`;
+    text += `${lineLong}\n\n`;
+    text += ` ✨ _Thank you for your business!_ ✨`;
+    
+    const encoded = encodeURIComponent(text);
+    window.open(`https://api.whatsapp.com/send?text=${encoded}`, '_blank');
+}
+
+document.getElementById('btn-submit-bill').addEventListener('click', () => handleBillSubmission('submit'));
+document.getElementById('btn-generate-pdf').addEventListener('click', () => handleBillSubmission('pdf'));
+document.getElementById('btn-generate-image').addEventListener('click', () => handleBillSubmission('image'));
+document.getElementById('btn-send-wa').addEventListener('click', () => handleBillSubmission('whatsapp'));
 
 document.getElementById('btn-reset-bill').addEventListener('click', () => {
     currentBill = [];
@@ -999,53 +1022,6 @@ document.getElementById('btn-reset-bill').addEventListener('click', () => {
     document.getElementById('pos-customer-name').value = '';
     document.getElementById('pos-customer-number').value = '';
     updateBillUI();
-});
-
-
-
-document.getElementById('btn-send-wa').addEventListener('click', () => {
-    if (currentBill.length === 0) { alert('Bill is empty!'); return; }
-    
-    let subTotal = currentBill.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const deliveryFee = parseFloat(document.getElementById('pos-delivery-fee').value) || 0;
-    const totalAmount = subTotal + deliveryFee;
-    const advancePayment = parseFloat(document.getElementById('pos-advance-payment').value) || 0;
-    const balance = totalAmount - advancePayment;
-    const customerName = document.getElementById('pos-customer-name').value;
-    const customerNumber = document.getElementById('pos-customer-number').value;
-    
-    let now = new Date();
-    let dateStr = now.toLocaleDateString('en-GB'); // DD/MM/YYYY
-    let timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-    
-    const lineShort = "--------------------------------------------------------";
-    const lineLong = "-------------------------------------------------------------------------------------------";
-    
-    let text = `*INVOICE* \n`;
-    text += `*${currentBusiness || 'Business Name'}*\n`;
-    text += ` ${dateStr} - ${timeStr}\n`;
-    text += `${lineShort}\n`;
-    text += `👤 Customer: ${customerName || ''}\n`;
-    text += `${lineShort}\n`;
-    
-    text += `🛒*ORDER DETAILS :*\n`;
-    currentBill.forEach(i => {
-        text += `▫️ ${i.name}\n      ${i.quantity} x ${formatCurrency(i.price)} = *${formatCurrency(i.price * i.quantity)}*\n`;
-    });
-    
-    text += `${lineShort}\n`;
-    text += `💰 Subtotal: ${formatCurrency(subTotal)}\n`;
-    text += `🚚 Delivery: ${formatCurrency(deliveryFee)}\n`;
-    text += `🧮 *Total:* ${formatCurrency(totalAmount)}\n`;
-    text += `💵 Advance: ${formatCurrency(advancePayment)}\n`;
-    text += `⚖️ *Balance Due:* *${formatCurrency(balance)}*\n`;
-    text += `${lineLong}\n`;
-    text += `📝 *Note :* ⏳ Estimated delivery time: 2–3 working days.\n`;
-    text += `${lineLong}\n\n`;
-    text += ` ✨ _Thank you for your business!_ ✨`;
-    
-    const encoded = encodeURIComponent(text);
-    window.open(`https://api.whatsapp.com/send?text=${encoded}`, '_blank');
 });
 
 function showInvoicePrintout(invoice) {
