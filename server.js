@@ -228,12 +228,15 @@ app.get('/api/dashboard', async (req, res) => {
         // Daily Stats
         const dailyInvoices = await Invoice.find({ ...queryFilter, date: today });
         const totalBillsToday = dailyInvoices.length;
-        const dailyIncome = dailyInvoices.reduce((sum, inv) => sum + inv.total_amount, 0);
+        // Deduct 500 from each order to split into delivery; 500 stays in delivery price
+        const dailyIncome = dailyInvoices.reduce((sum, inv) => sum + (inv.total_amount - 500), 0);
+        const dailyDelivery = totalBillsToday * 500;
 
         // Monthly Stats
         const monthlyInvoices = await Invoice.find({ ...queryFilter, date: new RegExp('^' + currentMonth) });
         const totalBillsMonth = monthlyInvoices.length;
-        const monthlyIncome = monthlyInvoices.reduce((sum, inv) => sum + inv.total_amount, 0);
+        const monthlyIncome = monthlyInvoices.reduce((sum, inv) => sum + (inv.total_amount - 500), 0);
+        const monthlyDelivery = totalBillsMonth * 500;
 
         // Product Stats
         const totalProducts = await Product.countDocuments(queryFilter);
@@ -242,8 +245,10 @@ app.get('/api/dashboard', async (req, res) => {
         res.json({
             totalBillsToday,
             dailyIncome,
+            dailyDelivery,
             totalBillsMonth,
             monthlyIncome,
+            monthlyDelivery,
             totalProducts,
             lowStockProducts
         });

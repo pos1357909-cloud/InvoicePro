@@ -556,6 +556,9 @@ async function loadDashboard() {
         document.getElementById('dash-bills-month').textContent = stats.totalBillsMonth;
         document.getElementById('dash-income-today').textContent = formatCurrency(stats.dailyIncome);
         document.getElementById('dash-income-month').textContent = formatCurrency(stats.monthlyIncome);
+        if (document.getElementById('dash-delivery-today')) {
+            document.getElementById('dash-delivery-today').textContent = formatCurrency(stats.dailyDelivery);
+        }
         document.getElementById('dash-total-products').textContent = stats.totalProducts;
         document.getElementById('dash-low-stock').textContent = stats.lowStockProducts;
 
