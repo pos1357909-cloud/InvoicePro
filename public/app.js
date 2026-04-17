@@ -1014,38 +1014,39 @@ document.getElementById('btn-send-wa').addEventListener('click', () => {
     
     let now = new Date();
     let dateStr = now.toLocaleDateString('en-GB'); // DD/MM/YYYY
-    let timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    let timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+    let dateTimeStr = `${dateStr} - ${timeStr}`;
     
     const line = "----------------------------------";
     const center = (str) => {
-        const width = 34;
-        const cleanStr = str.replace(/\*/g, '').replace(/_/g, '');
+        const width = 34; // Approx width for mobile view
+        const cleanStr = str.replace(/\*/g, '').replace(/_/g, '').replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, ' '); // Very rough emoji width estimation
         const padding = Math.max(0, Math.floor((width - cleanStr.length) / 2));
         return " ".repeat(padding) + str;
     };
 
     let text = `${center("*INVOICE*")}\n`;
     text += `${center(`*${(currentBusiness || 'Business Name').toUpperCase()}*`)}\n`;
-    text += `${center(`Date: ${dateStr} / time : ${timeStr}`)}\n`;
+    text += `${center(dateTimeStr)}\n`;
     text += `${line}\n`;
-    text += `Customer : ${customerName || ''}\n`;
+    text += `👤 Customer: ${customerName || ''}\n`;
     text += `${line}\n`;
     
-    text += `*ORDER DETAILS :*\n\n`;
+    text += `🛒*ORDER DETAILS :*\n\n`;
     currentBill.forEach(i => {
-        text += `${i.name}\n      ${i.quantity} x ${formatCurrency(i.price)} = *${formatCurrency(i.price * i.quantity)}*\n`;
+        text += `▫️ ${i.name}\n      ${i.quantity} x ${formatCurrency(i.price)} = *${formatCurrency(i.price * i.quantity)}*\n`;
     });
     
+    text += `\n${line}\n`;
+    text += `💰 Subtotal: ${formatCurrency(subTotal)}\n`;
+    text += `🚚 Delivery: ${formatCurrency(deliveryFee)}\n`;
+    text += `🧮 *Total:* ${formatCurrency(totalAmount)}\n`;
+    text += `💵 Advance: ${formatCurrency(advancePayment)}\n`;
+    text += `⚖️ *Balance Due:* *${formatCurrency(balance)}*\n`;
     text += `${line}\n`;
-    text += `Subtotal: ${formatCurrency(subTotal)}\n`;
-    text += `Delivery: ${formatCurrency(deliveryFee)}\n`;
-    text += `*Total:* ${formatCurrency(totalAmount)}\n`;
-    text += `Advance: ${formatCurrency(advancePayment)}\n`;
-    text += `*Balance Due:* *${formatCurrency(balance)}*\n`;
-    text += `${line}\n`;
-    text += `*Note :* Estimated delivery time: 2–3 working days.\n`;
+    text += `📝 *Note :* ⏳ Estimated delivery time: 2–3 working days.\n`;
     text += `${line}\n\n`;
-    text += `${center("_Thank you for your business!_")}`;
+    text += `${center("✨ _Thank you for your business!_ ✨")}`;
     
     const encoded = encodeURIComponent(text);
     window.open(`https://api.whatsapp.com/send?text=${encoded}`, '_blank');
