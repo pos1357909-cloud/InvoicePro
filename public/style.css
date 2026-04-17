@@ -341,6 +341,18 @@ body {
 .btn-block { width: 100%; }
 .btn-lg { padding: 14px; font-size: 16px; }
 
+.btn-pdf { background-color: #ef4444 !important; color: white !important; border: none !important; }
+.btn-pdf:hover { background-color: #dc2626 !important; }
+
+.btn-image { background-color: #f59e0b !important; color: white !important; border: none !important; }
+.btn-image:hover { background-color: #d97706 !important; }
+
+.btn-reset { background-color: #64748b !important; color: white !important; border: none !important; }
+.btn-reset:hover { background-color: #475569 !important; }
+
+.btn-whatsapp { background-color: #22c55e !important; color: white !important; border: none !important; }
+.btn-whatsapp:hover { background-color: #16a34a !important; }
+
 .form-control {
     width: 100%;
     padding: 10px 14px;
