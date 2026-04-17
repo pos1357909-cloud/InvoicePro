@@ -1017,21 +1017,13 @@ document.getElementById('btn-send-wa').addEventListener('click', () => {
     let now = new Date();
     let dateStr = now.toLocaleDateString('en-GB'); // DD/MM/YYYY
     let timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-    let dateTimeStr = `${dateStr} - ${timeStr}`;
     
     const lineShort = "--------------------------------------------------------";
     const lineLong = "-------------------------------------------------------------------------------------------";
     
-    const center = (str) => {
-        const width = 45; // Adjusted for longer lines
-        const cleanStr = str.replace(/\*/g, '').replace(/_/g, '').replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, ' '); 
-        const padding = Math.max(0, Math.floor((width - cleanStr.length) / 2));
-        return " ".repeat(padding) + str;
-    };
-
-    let text = `${center("*INVOICE*")}\n`;
-    text += `${center(`*${(currentBusiness || 'Business Name').toUpperCase()}*`)}\n`;
-    text += `${center(dateTimeStr)}\n`;
+    let text = `*INVOICE* \n`;
+    text += `*${currentBusiness || 'Business Name'}*\n`;
+    text += ` ${dateStr} - ${timeStr}\n`;
     text += `${lineShort}\n`;
     text += `👤 Customer: ${customerName || ''}\n`;
     text += `${lineShort}\n`;
@@ -1041,7 +1033,7 @@ document.getElementById('btn-send-wa').addEventListener('click', () => {
         text += `▫️ ${i.name}\n      ${i.quantity} x ${formatCurrency(i.price)} = *${formatCurrency(i.price * i.quantity)}*\n`;
     });
     
-    text += `\n${lineShort}\n`;
+    text += `${lineShort}\n`;
     text += `💰 Subtotal: ${formatCurrency(subTotal)}\n`;
     text += `🚚 Delivery: ${formatCurrency(deliveryFee)}\n`;
     text += `🧮 *Total:* ${formatCurrency(totalAmount)}\n`;
@@ -1050,7 +1042,7 @@ document.getElementById('btn-send-wa').addEventListener('click', () => {
     text += `${lineLong}\n`;
     text += `📝 *Note :* ⏳ Estimated delivery time: 2–3 working days.\n`;
     text += `${lineLong}\n\n`;
-    text += `${center("✨ _Thank you for your business!_ ✨")}`;
+    text += ` ✨ _Thank you for your business!_ ✨`;
     
     const encoded = encodeURIComponent(text);
     window.open(`https://api.whatsapp.com/send?text=${encoded}`, '_blank');
