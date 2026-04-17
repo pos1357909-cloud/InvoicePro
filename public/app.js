@@ -404,7 +404,7 @@ function hideModal() {
 
 // ==== UTILS ====
 function formatCurrency(amount) {
-    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'LKR' }).format(amount).replace('LKR', 'Rs.');
+    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'LKR' }).format(amount).replace('LKR', 'Rs. ');
 }
 
 function exportToCSV(filename, rows) {
@@ -1001,6 +1001,8 @@ document.getElementById('btn-reset-bill').addEventListener('click', () => {
     updateBillUI();
 });
 
+
+
 document.getElementById('btn-send-wa').addEventListener('click', () => {
     if (currentBill.length === 0) { alert('Bill is empty!'); return; }
     
@@ -1017,10 +1019,12 @@ document.getElementById('btn-send-wa').addEventListener('click', () => {
     let timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
     let dateTimeStr = `${dateStr} - ${timeStr}`;
     
-    const line = "----------------------------------";
+    const lineShort = "--------------------------------------------------------";
+    const lineLong = "-------------------------------------------------------------------------------------------";
+    
     const center = (str) => {
-        const width = 34; // Approx width for mobile view
-        const cleanStr = str.replace(/\*/g, '').replace(/_/g, '').replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, ' '); // Very rough emoji width estimation
+        const width = 45; // Adjusted for longer lines
+        const cleanStr = str.replace(/\*/g, '').replace(/_/g, '').replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, ' '); 
         const padding = Math.max(0, Math.floor((width - cleanStr.length) / 2));
         return " ".repeat(padding) + str;
     };
@@ -1028,24 +1032,24 @@ document.getElementById('btn-send-wa').addEventListener('click', () => {
     let text = `${center("*INVOICE*")}\n`;
     text += `${center(`*${(currentBusiness || 'Business Name').toUpperCase()}*`)}\n`;
     text += `${center(dateTimeStr)}\n`;
-    text += `${line}\n`;
+    text += `${lineShort}\n`;
     text += `👤 Customer: ${customerName || ''}\n`;
-    text += `${line}\n`;
+    text += `${lineShort}\n`;
     
-    text += `🛒*ORDER DETAILS :*\n\n`;
+    text += `🛒*ORDER DETAILS :*\n`;
     currentBill.forEach(i => {
         text += `▫️ ${i.name}\n      ${i.quantity} x ${formatCurrency(i.price)} = *${formatCurrency(i.price * i.quantity)}*\n`;
     });
     
-    text += `\n${line}\n`;
+    text += `\n${lineShort}\n`;
     text += `💰 Subtotal: ${formatCurrency(subTotal)}\n`;
     text += `🚚 Delivery: ${formatCurrency(deliveryFee)}\n`;
     text += `🧮 *Total:* ${formatCurrency(totalAmount)}\n`;
     text += `💵 Advance: ${formatCurrency(advancePayment)}\n`;
     text += `⚖️ *Balance Due:* *${formatCurrency(balance)}*\n`;
-    text += `${line}\n`;
+    text += `${lineLong}\n`;
     text += `📝 *Note :* ⏳ Estimated delivery time: 2–3 working days.\n`;
-    text += `${line}\n\n`;
+    text += `${lineLong}\n\n`;
     text += `${center("✨ _Thank you for your business!_ ✨")}`;
     
     const encoded = encodeURIComponent(text);
