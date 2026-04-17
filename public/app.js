@@ -110,26 +110,26 @@ async function checkAuth() {
         authOverlay.classList.remove('active');
         document.getElementById('business-name-display').textContent = currentBusiness;
         
-        // Attempt to fetch fresh details if missing
-        if (!currentEmail || !currentWhatsApp) {
-            try {
-                const res = await fetch(`${API_BASE}/auth/me`, {
-                    headers: { 'Authorization': `Bearer ${authToken}` }
-                });
-                if(res.ok) {
-                    const data = await res.json();
-                    currentBusiness = data.business_name || currentBusiness;
-                    currentEmail = data.email || '';
-                    currentWhatsApp = data.whatsapp_number || '';
-                    currentBankDetails = data.bank_details || '';
-                    localStorage.setItem('pos_business', currentBusiness);
-                    localStorage.setItem('pos_email', currentEmail);
-                    localStorage.setItem('pos_whatsapp', currentWhatsApp);
-                    localStorage.setItem('pos_bank_details', currentBankDetails);
-                    document.getElementById('business-name-display').textContent = currentBusiness;
-                }
-            } catch(e) { console.error('Silent auth refresh failed', e); }
-        }
+        // Attempt to fetch fresh details if missing or to verify role
+        try {
+            const res = await fetch(`${API_BASE}/auth/me`, {
+                headers: { 'Authorization': `Bearer ${authToken}` }
+            });
+            if(res.ok) {
+                const data = await res.json();
+                currentBusiness = data.business_name || currentBusiness;
+                currentRole = data.role || currentRole;
+                currentEmail = data.email || '';
+                currentWhatsApp = data.whatsapp_number || '';
+                currentBankDetails = data.bank_details || '';
+                localStorage.setItem('pos_business', currentBusiness);
+                localStorage.setItem('pos_role', currentRole);
+                localStorage.setItem('pos_email', currentEmail);
+                localStorage.setItem('pos_whatsapp', currentWhatsApp);
+                localStorage.setItem('pos_bank_details', currentBankDetails);
+                document.getElementById('business-name-display').textContent = currentBusiness;
+            }
+        } catch(e) { console.error('Silent auth refresh failed', e); }
         
         if (currentRole === 'admin') {
             document.getElementById('nav-item-admin').style.display = 'block';
@@ -1016,36 +1016,36 @@ document.getElementById('btn-send-wa').addEventListener('click', () => {
     let dateStr = now.toLocaleDateString('en-GB'); // DD/MM/YYYY
     let timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     
-    // Using exact emojis from user request
-    let text = `🧾 *${(currentBusiness || 'YOUR BUSINESS NAME').toUpperCase()} - INVOICE* 🧾\n`;
-    text += `🕒 *Date & Time:* ${dateStr} ${timeStr}\n`;
-    text += `➖➖➖➖➖➖➖➖➖➖➖➖\n`;
-    text += `👤 *Customer:* ${customerName || '[Name]'}\n\n`;
+    const line = "----------------------------------";
+    const center = (str) => {
+        const width = 34;
+        const cleanStr = str.replace(/\*/g, '').replace(/_/g, '');
+        const padding = Math.max(0, Math.floor((width - cleanStr.length) / 2));
+        return " ".repeat(padding) + str;
+    };
+
+    let text = `${center("*INVOICE*")}\n`;
+    text += `${center(`*${(currentBusiness || 'Business Name').toUpperCase()}*`)}\n`;
+    text += `${center(`Date: ${dateStr} / time : ${timeStr}`)}\n`;
+    text += `${line}\n`;
+    text += `Customer : ${customerName || ''}\n`;
+    text += `${line}\n`;
     
-    text += `🛒 *ORDER DETAILS:*\n`;
+    text += `*ORDER DETAILS :*\n\n`;
     currentBill.forEach(i => {
-        text += `🔹 ${i.name}\n      ${i.quantity} x ${formatCurrency(i.price)} = *${formatCurrency(i.price * i.quantity)}*\n`;
+        text += `${i.name}\n      ${i.quantity} x ${formatCurrency(i.price)} = *${formatCurrency(i.price * i.quantity)}*\n`;
     });
     
-    text += `➖➖➖➖➖➖➖➖➖➖➖➖\n`;
-    text += `📊 *Sub Total*: ${formatCurrency(subTotal)}\n`;
-    text += `🚚 *Delivery Fee*: ${formatCurrency(deliveryFee)}\n`;
-    text += `💰 *Total Amount*: *${formatCurrency(totalAmount)}*\n`;
-    text += `➖➖➖➖➖➖➖➖➖➖➖➖\n\n`;
-    
-    if (advancePayment > 0) {
-        text += `*Advance Payment*: ${formatCurrency(advancePayment)}\n`;
-        text += `*Balance Due*: *${formatCurrency(balance)}*\n`;
-        text += `➖➖➖➖➖➖➖➖➖➖➖➖\n\n`;
-    }
-
-    if (currentBankDetails && currentBankDetails.trim() !== '') {
-        text += `*Bank Details:*\n${currentBankDetails}\n\n`;
-        text += `➖➖➖➖➖➖➖➖➖➖➖➖\n\n`;
-    }
-    
-    text += `📦 *Note:* It will take 3 to 5 working days to receive the next order.\n\n`;
-    text += `✨ _Thank you for your order!_ ✨`;
+    text += `${line}\n`;
+    text += `Subtotal: ${formatCurrency(subTotal)}\n`;
+    text += `Delivery: ${formatCurrency(deliveryFee)}\n`;
+    text += `*Total:* ${formatCurrency(totalAmount)}\n`;
+    text += `Advance: ${formatCurrency(advancePayment)}\n`;
+    text += `*Balance Due:* *${formatCurrency(balance)}*\n`;
+    text += `${line}\n`;
+    text += `*Note :* Estimated delivery time: 2–3 working days.\n`;
+    text += `${line}\n\n`;
+    text += `${center("_Thank you for your business!_")}`;
     
     const encoded = encodeURIComponent(text);
     window.open(`https://api.whatsapp.com/send?text=${encoded}`, '_blank');
