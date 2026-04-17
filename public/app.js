@@ -1016,6 +1016,7 @@ document.getElementById('btn-send-wa').addEventListener('click', () => {
     let dateStr = now.toLocaleDateString('en-GB'); // DD/MM/YYYY
     let timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     
+    // Using exact emojis from user request
     let text = `🧾 *${(currentBusiness || 'YOUR BUSINESS NAME').toUpperCase()} - INVOICE* 🧾\n`;
     text += `🕒 *Date & Time:* ${dateStr} ${timeStr}\n`;
     text += `➖➖➖➖➖➖➖➖➖➖➖➖\n`;
@@ -1033,20 +1034,21 @@ document.getElementById('btn-send-wa').addEventListener('click', () => {
     text += `➖➖➖➖➖➖➖➖➖➖➖➖\n\n`;
     
     if (advancePayment > 0) {
-        text += `💸 *Advance Payment*: ${formatCurrency(advancePayment)}\n`;
-        text += `⚖️ *Balance Due*: *${formatCurrency(balance)}*\n`;
+        text += `*Advance Payment*: ${formatCurrency(advancePayment)}\n`;
+        text += `*Balance Due*: *${formatCurrency(balance)}*\n`;
         text += `➖➖➖➖➖➖➖➖➖➖➖➖\n\n`;
     }
 
     if (currentBankDetails && currentBankDetails.trim() !== '') {
-        text += `🏦 *Bank Details:*\n${currentBankDetails}\n\n`;
+        text += `*Bank Details:*\n${currentBankDetails}\n\n`;
+        text += `➖➖➖➖➖➖➖➖➖➖➖➖\n\n`;
     }
     
     text += `📦 *Note:* It will take 3 to 5 working days to receive the next order.\n\n`;
     text += `✨ _Thank you for your order!_ ✨`;
     
     const encoded = encodeURIComponent(text);
-    window.open(`https://wa.me/?text=${encoded}`, '_blank');
+    window.open(`https://api.whatsapp.com/send?text=${encoded}`, '_blank');
 });
 
 function showInvoicePrintout(invoice) {
