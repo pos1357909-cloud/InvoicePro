@@ -38,8 +38,14 @@ const UserSchema = new mongoose.Schema({
     bank_details: { type: String, default: '' }
 });
 
+const CategorySchema = new mongoose.Schema({
+    user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    name: { type: String, required: true }
+});
+
 const ProductSchema = new mongoose.Schema({
     user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    category: { type: String, default: 'General' },
     name: { type: String, required: true },
     quantity: { type: Number, default: 0 },
     price: { type: Number, default: 0.0 },
@@ -67,12 +73,16 @@ const InvoiceSchema = new mongoose.Schema({
         bank_details: String
     },
     sub_total: { type: Number, default: 0.0 },
+    discount: { type: Number, default: 0.0 },
     delivery_fee: { type: Number, default: 0.0 },
     total_amount: { type: Number, default: 0.0 },
     advance_payment: { type: Number, default: 0.0 },
     balance: { type: Number, default: 0.0 },
     items: [InvoiceItemSchema]
 });
+
+const Category = mongoose.model('Category', CategorySchema);
+const Project = null; // Removed if any project specific logic is there, but here I see models.
 
 // -- MODELS --
 const User = mongoose.model('User', UserSchema);
@@ -115,5 +125,6 @@ module.exports = {
     initializeDatabase,
     User,
     Product,
-    Invoice
+    Invoice,
+    Category
 };

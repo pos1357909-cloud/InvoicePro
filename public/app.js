@@ -189,6 +189,7 @@ const modalOverlay = document.getElementById('modal-overlay');
 const productModal = document.getElementById('product-modal');
 const invoiceModal = document.getElementById('invoice-modal');
 const adminUserModal = document.getElementById('admin-user-modal');
+const categoryModal = document.getElementById('category-modal');
 
 // ==== INITIALIZATION ====
 document.addEventListener('DOMContentLoaded', () => {
@@ -256,6 +257,7 @@ function setupModals() {
     document.getElementById('btn-close-modal').addEventListener('click', hideModal);
     document.getElementById('btn-close-invoice-modal').addEventListener('click', hideModal);
     document.getElementById('btn-close-admin-modal').addEventListener('click', hideModal);
+    document.getElementById('btn-close-category-modal').addEventListener('click', hideModal);
     
     // Add product
     document.getElementById('btn-add-product').addEventListener('click', () => {
@@ -264,7 +266,31 @@ function setupModals() {
         currentProductImageBase64 = null;
         document.getElementById('product-image-preview').innerHTML = '<span style="color:var(--text-muted);font-size:12px;">+ Add Image</span>';
         document.getElementById('product-modal-title').textContent = 'Add Product';
+        loadCategoriesForSelect();
         showModal(productModal);
+    });
+
+    // Manage Categories
+    document.getElementById('btn-manage-categories').addEventListener('click', () => {
+        loadCategoryManagement();
+        showModal(categoryModal);
+    });
+
+    // Category form submission
+    document.getElementById('category-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = document.getElementById('category-name').value;
+        try {
+            const res = await fetchAuth(`${API_BASE}/categories`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name })
+            });
+            if (res.ok) {
+                document.getElementById('category-form').reset();
+                loadCategoryManagement();
+            }
+        } catch (err) { console.error(err); }
     });
 
     // Handle Image Selection
@@ -313,11 +339,13 @@ function setupModals() {
         e.preventDefault();
         const id = document.getElementById('product-id').value;
         const name = document.getElementById('product-name').value;
+        const category = document.getElementById('product-category').value;
         const qty = document.getElementById('product-qty').value;
         const price = document.getElementById('product-price').value;
         
         const payload = { 
             name, 
+            category,
             quantity: parseInt(qty), 
             price: parseFloat(price),
             image: currentProductImageBase64
@@ -619,6 +647,7 @@ async function loadInventory() {
             
             tr.innerHTML = `
                 <td style="display:flex;align-items:center;gap:12px;">${imgHtml} ${nameDisplay}</td>
+                <td><span class="badge" style="background:var(--secondary);color:var(--text);padding:2px 8px;border-radius:4px;font-size:11px;">${p.category || 'General'}</span></td>
                 <td class="${p.quantity <= 10 ? 'text-danger' : ''}">${p.quantity}</td>
                 <td>${formatCurrency(p.price)}</td>
                 <td>
@@ -658,6 +687,10 @@ function editProduct(id) {
     if(p) {
         document.getElementById('product-id').value = p.id;
         document.getElementById('product-name').value = p.name;
+        
+        await loadCategoriesForSelect();
+        document.getElementById('product-category').value = p.category || 'General';
+        
         document.getElementById('product-qty').value = p.quantity;
         document.getElementById('product-price').value = p.price;
         
@@ -770,10 +803,12 @@ function updateBillQuantity(id, change) {
 
 function calculateCurrentBillExtras() {
     let subTotal = currentBill.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const discountInput = document.getElementById('pos-discount');
+    const discount = parseFloat(discountInput ? discountInput.value : 0) || 0;
     const deliveryFeeInput = document.getElementById('pos-delivery-fee');
     const deliveryFee = parseFloat(deliveryFeeInput ? deliveryFeeInput.value : 0) || 0;
     
-    const totalAmount = subTotal + deliveryFee;
+    const totalAmount = subTotal - discount + deliveryFee;
     
     const advancePaymentInput = document.getElementById('pos-advance-payment');
     const advancePayment = parseFloat(advancePaymentInput ? advancePaymentInput.value : 0) || 0;
@@ -820,6 +855,7 @@ function updateBillUI() {
 }
 
 // Add event listeners for the extra fields
+document.getElementById('pos-discount').addEventListener('input', calculateCurrentBillExtras);
 document.getElementById('pos-delivery-fee').addEventListener('input', calculateCurrentBillExtras);
 document.getElementById('pos-advance-payment').addEventListener('input', calculateCurrentBillExtras);
 
@@ -830,8 +866,9 @@ async function handleBillSubmission(action) {
     }
     
     let subTotal = currentBill.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const discount = parseFloat(document.getElementById('pos-discount').value) || 0;
     const deliveryFee = parseFloat(document.getElementById('pos-delivery-fee').value) || 0;
-    let totalAmount = subTotal + deliveryFee;
+    let totalAmount = subTotal - discount + deliveryFee;
     const advancePayment = parseFloat(document.getElementById('pos-advance-payment').value) || 0;
     let balance = totalAmount - advancePayment;
     const customerName = document.getElementById('pos-customer-name').value;
@@ -840,6 +877,7 @@ async function handleBillSubmission(action) {
     const payload = {
         items: currentBill,
         sub_total: subTotal,
+        discount: discount,
         delivery_fee: deliveryFee,
         total_amount: totalAmount,
         advance_payment: advancePayment,
@@ -873,6 +911,7 @@ async function handleBillSubmission(action) {
         
         // Clear bill and reset UI components
         currentBill = [];
+        document.getElementById('pos-discount').value = '0';
         document.getElementById('pos-delivery-fee').value = '0';
         document.getElementById('pos-advance-payment').value = '0';
         document.getElementById('pos-customer-name').value = '';
@@ -928,6 +967,7 @@ function getInvoiceHTML(invoice) {
             </table>
             <div style="border-top:1px solid #000; padding-top: 10px; font-size: 14px;">
                 <div style="display:flex; justify-content:space-between; margin-bottom: 5px;"><span>Sub Total:</span><span>${formatCurrency(invoice.sub_total)}</span></div>
+                <div style="display:flex; justify-content:space-between; margin-bottom: 5px;"><span>Discount:</span><span>${formatCurrency(invoice.discount)}</span></div>
                 <div style="display:flex; justify-content:space-between; margin-bottom: 5px;"><span>Delivery Fee:</span><span>${formatCurrency(invoice.delivery_fee)}</span></div>
                 <div style="display:flex; justify-content:space-between; margin-bottom: 5px; font-weight: bold; font-size: 16px;"><span>Total Amount:</span><span>${formatCurrency(invoice.total_amount)}</span></div>
                 <div style="display:flex; justify-content:space-between; margin-bottom: 5px;"><span>Advance Payment:</span><span>${formatCurrency(invoice.advance_payment)}</span></div>
@@ -1000,6 +1040,7 @@ function shareOnWhatsApp(invoice) {
     
     text += `${lineShort}\n`;
     text += `💰 Subtotal: ${formatCurrency(invoice.sub_total)}\n`;
+    text += `🏷️ Discount: ${formatCurrency(invoice.discount)}\n`;
     text += `🚚 Delivery: ${formatCurrency(invoice.delivery_fee)}\n`;
     text += `🧮 *Total:* ${formatCurrency(invoice.total_amount)}\n`;
     text += `💵 Advance: ${formatCurrency(invoice.advance_payment)}\n`;
@@ -1020,6 +1061,7 @@ document.getElementById('btn-send-wa').addEventListener('click', () => handleBil
 
 document.getElementById('btn-reset-bill').addEventListener('click', () => {
     currentBill = [];
+    document.getElementById('pos-discount').value = '0';
     document.getElementById('pos-delivery-fee').value = '0';
     document.getElementById('pos-advance-payment').value = '0';
     document.getElementById('pos-customer-name').value = '';
@@ -1077,6 +1119,9 @@ function showInvoicePrintout(invoice) {
     const subTotalEl = document.getElementById('receipt-sub-total');
     if (subTotalEl) subTotalEl.textContent = (invoice.sub_total || 0).toFixed(2);
     
+    const discountEl = document.getElementById('receipt-discount');
+    if (discountEl) discountEl.textContent = (invoice.discount || 0).toFixed(2);
+    
     const deliveryEl = document.getElementById('receipt-delivery-fee');
     if (deliveryEl) deliveryEl.textContent = (invoice.delivery_fee || 0).toFixed(2);
     
@@ -1115,22 +1160,20 @@ async function loadInvoices() {
         
         invoicesList.forEach(inv => {
             const tr = document.createElement('tr');
-            let adminActions = '';
-            let invDisplay = inv.invoice_number;
+            let businessNameDisplay = '';
             if (currentRole === 'admin') {
-                invDisplay += `<div style="font-size:11px;color:var(--primary);margin-top:2px;">[${inv.owner_name}]</div>`;
-                adminActions = `<button class="btn btn-danger btn-icon-only delete-invoice-btn" style="margin-left: 4px;" data-id="${inv.id}"><i class='bx bx-trash'></i></button>`;
+                businessNameDisplay = `<div style="font-size:11px;color:var(--primary);margin-top:2px;">[${inv.owner_name}]</div>`;
             }
             
             tr.innerHTML = `
-                <td>${invDisplay}</td>
+                <td>${inv.invoice_number}${businessNameDisplay}</td>
                 <td>${inv.date}</td>
                 <td>${inv.time}</td>
                 <td style="font-weight:bold">${formatCurrency(inv.total_amount)}</td>
                 <td>
-                    <button class="btn btn-outline btn-icon-only view-invoice-btn" data-id="${inv.id}"><i class='bx bx-show'></i></button>
-                    <button class="btn btn-primary btn-icon-only print-invoice-btn" data-id="${inv.id}"><i class='bx bx-printer'></i></button>
-                    ${adminActions}
+                    <button class="btn btn-outline btn-icon-only view-invoice-btn" data-id="${inv.id}" title="View"><i class='bx bx-show'></i></button>
+                    <button class="btn btn-primary btn-icon-only print-invoice-btn" data-id="${inv.id}" title="Print"><i class='bx bx-printer'></i></button>
+                    <button class="btn btn-danger btn-icon-only delete-invoice-btn" style="margin-left: 4px;" data-id="${inv.id}" title="Remove"><i class='bx bx-trash'></i></button>
                 </td>
             `;
             tbody.appendChild(tr);
@@ -1314,3 +1357,53 @@ document.querySelector('#admin-users-table tbody').addEventListener('click', asy
         }
     }
 });
+
+async function loadCategoriesForSelect() {
+    try {
+        const res = await fetchAuth(`${API_BASE}/categories`);
+        const categories = await res.json();
+        const select = document.getElementById('product-category');
+        const currentValue = select.value;
+        
+        select.innerHTML = '<option value="General">General</option>';
+        categories.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c.name;
+            opt.textContent = c.name;
+            select.appendChild(opt);
+        });
+        if (currentValue) select.value = currentValue;
+    } catch (err) { console.error(err); }
+}
+
+async function loadCategoryManagement() {
+    try {
+        const res = await fetchAuth(`${API_BASE}/categories`);
+        const categories = await res.json();
+        const listContainer = document.getElementById('category-list');
+        listContainer.innerHTML = '';
+        
+        if (categories.length === 0) {
+            listContainer.innerHTML = '<p style="text-align:center; color:var(--text-muted); font-size:14px; margin-top:10px;">No categories added yet.</p>';
+        }
+
+        categories.forEach(c => {
+            const div = document.createElement('div');
+            div.style = 'display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid var(--border);';
+            div.innerHTML = `
+                <span>${c.name}</span>
+                <button class="btn btn-danger btn-sm" onclick="deleteCategory('${c.id}')"><i class="bx bx-trash"></i></button>
+            `;
+            listContainer.appendChild(div);
+        });
+    } catch (err) { console.error(err); }
+}
+
+async function deleteCategory(id) {
+    if (confirm('Are you sure you want to delete this category? Products in this category will remain but will show as "General".')) {
+        try {
+            await fetchAuth(`${API_BASE}/categories/${id}`, { method: 'DELETE' });
+            loadCategoryManagement();
+        } catch (err) { console.error(err); }
+    }
+}

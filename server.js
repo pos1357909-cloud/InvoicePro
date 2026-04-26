@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const { connectDB, initializeDatabase, User, Product, Invoice } = require('./database');
+const { connectDB, initializeDatabase, User, Product, Invoice, Category } = require('./database');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -279,6 +279,39 @@ app.get('/api/dashboard/low-stock', async (req, res) => {
     }
 });
 
+// ==== CATEGORY API ====
+app.get('/api/categories', async (req, res) => {
+    try {
+        const queryFilter = req.user.role === 'admin' ? {} : { user_id: req.user._id };
+        const categories = await Category.find(queryFilter).sort({ name: 1 });
+        res.json(categories.map(c => ({ id: c._id.toString(), name: c.name })));
+    } catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/categories', async (req, res) => {
+    const { name } = req.body;
+    if (!name) return res.status(400).json({ error: 'Name is required' });
+    try {
+        const category = await Category.create({ user_id: req.user._id, name });
+        res.status(201).json({ id: category._id.toString(), name: category.name });
+    } catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/categories/:id', async (req, res) => {
+    try {
+        const queryFilter = req.user.role === 'admin' ? { _id: req.params.id } : { _id: req.params.id, user_id: req.user._id };
+        const category = await Category.findOneAndDelete(queryFilter);
+        if (!category) return res.status(404).json({ error: 'Category not found' });
+        res.json({ message: 'Category deleted successfully' });
+    } catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+});
+
 // ==== INVENTORY (PRODUCTS) API ====
 
 app.get('/api/products', async (req, res) => {
@@ -291,6 +324,7 @@ app.get('/api/products', async (req, res) => {
         // Map _id to id for the frontend
         const mappedProducts = products.map(p => ({
             id: p._id.toString(),
+            category: p.category,
             name: p.name,
             quantity: p.quantity,
             price: p.price,
@@ -305,7 +339,7 @@ app.get('/api/products', async (req, res) => {
 });
 
 app.post('/api/products', async (req, res) => {
-    const { name, quantity, price, image } = req.body;
+    const { name, category, quantity, price, image } = req.body;
     if (!name || quantity === undefined || price === undefined) {
         return res.status(400).json({ error: 'Missing required fields' });
     }
@@ -313,24 +347,25 @@ app.post('/api/products', async (req, res) => {
     try {
         const product = await Product.create({
             user_id: req.user._id,
+            category: category || 'General',
             name,
             quantity,
             price,
             image
         });
-        res.status(201).json({ id: product._id.toString(), name, quantity, price, image });
+        res.status(201).json({ id: product._id.toString(), category: product.category, name, quantity, price, image });
     } catch (err) {
         return res.status(500).json({ error: err.message });
     }
 });
 
 app.put('/api/products/:id', async (req, res) => {
-    const { name, quantity, price, image } = req.body;
+    const { name, category, quantity, price, image } = req.body;
     try {
         const queryFilter = req.user.role === 'admin' ? { _id: req.params.id } : { _id: req.params.id, user_id: req.user._id };
         const product = await Product.findOneAndUpdate(
             queryFilter,
-            { name, quantity, price, image },
+            { name, category, quantity, price, image },
             { new: true }
         );
         if (!product) return res.status(404).json({ error: 'Product not found' });
@@ -378,6 +413,7 @@ app.get('/api/invoices', async (req, res) => {
             customer_number: inv.customer_number,
             business_details: inv.business_details,
             sub_total: inv.sub_total,
+            discount: inv.discount,
             delivery_fee: inv.delivery_fee,
             total_amount: inv.total_amount,
             advance_payment: inv.advance_payment,
@@ -406,6 +442,7 @@ app.get('/api/invoices/:id', async (req, res) => {
             customer_number: invoice.customer_number,
             business_details: invoice.business_details,
             sub_total: invoice.sub_total,
+            discount: invoice.discount,
             delivery_fee: invoice.delivery_fee,
             total_amount: invoice.total_amount,
             advance_payment: invoice.advance_payment,
@@ -425,7 +462,7 @@ app.get('/api/invoices/:id', async (req, res) => {
 });
 
 app.post('/api/invoices', async (req, res) => {
-    const { items, sub_total, delivery_fee, total_amount, advance_payment, balance, customer_name, customer_number } = req.body;
+    const { items, sub_total, discount, delivery_fee, total_amount, advance_payment, balance, customer_name, customer_number } = req.body;
     
     if (!items || items.length === 0 || total_amount === undefined) {
         return res.status(400).json({ error: 'Invalid invoice data' });
@@ -463,6 +500,7 @@ app.post('/api/invoices', async (req, res) => {
                 bank_details: user ? user.bank_details : ''
             },
             sub_total: sub_total || 0,
+            discount: discount || 0,
             delivery_fee: delivery_fee || 0,
             total_amount,
             advance_payment: advance_payment || 0,
@@ -486,6 +524,7 @@ app.post('/api/invoices', async (req, res) => {
                 date,
                 time,
                 sub_total: invoice.sub_total,
+                discount: invoice.discount,
                 delivery_fee: invoice.delivery_fee,
                 total_amount: invoice.total_amount,
                 advance_payment: invoice.advance_payment,

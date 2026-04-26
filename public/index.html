@@ -259,6 +259,10 @@
                                     <span id="pos-sub-total">0.00</span>
                                 </div>
                                 <div class="summary-row" style="margin-bottom: 5px; font-size: 14px; display: flex; justify-content: space-between; align-items: center;">
+                                    <span>Discount</span>
+                                    <input type="number" id="pos-discount" class="form-control" style="width: 80px; height: 30px; text-align: right; padding: 4px;" value="0" min="0" />
+                                </div>
+                                <div class="summary-row" style="margin-bottom: 5px; font-size: 14px; display: flex; justify-content: space-between; align-items: center;">
                                     <span>Delivery Fee</span>
                                     <input type="number" id="pos-delivery-fee" class="form-control" style="width: 80px; height: 30px; text-align: right; padding: 4px;" value="0" min="0" />
                                 </div>
@@ -303,6 +307,7 @@
                         <div style="display: flex; gap: 10px;">
                             <button class="btn btn-outline" id="btn-export-inventory"><i class="bx bx-download"></i>
                                 Export CSV</button>
+                            <button class="btn btn-outline" id="btn-manage-categories"><i class="bx bx-list-ul"></i> Categories</button>
                             <button class="btn btn-primary" id="btn-add-product"><i class="bx bx-plus"></i> Add
                                 Product</button>
                         </div>
@@ -313,6 +318,7 @@
                                 <thead>
                                     <tr>
                                         <th>Item Name</th>
+                                        <th>Category</th>
                                         <th>Quantity</th>
                                         <th>Price</th>
                                         <th>Actions</th>
@@ -474,6 +480,15 @@
                             </div>
                         </div>
                         <div class="form-group">
+                            <label>Category</label>
+                            <div style="display:flex; gap:10px;">
+                                <select id="product-category" class="form-control" required>
+                                    <option value="General">General</option>
+                                    <!-- Dynamic Categories -->
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
                             <label>Item Name</label>
                             <input type="text" id="product-name" class="form-control" required />
                         </div>
@@ -487,6 +502,23 @@
                         </div>
                         <button type="submit" class="btn btn-primary btn-block">Save Product</button>
                     </form>
+                </div>
+            </div>
+
+            <!-- Category Management Modal -->
+            <div class="modal" id="category-modal">
+                <div class="modal-header">
+                    <h3>Manage Categories</h3>
+                    <button class="close-btn" id="btn-close-category-modal"><i class="bx bx-x"></i></button>
+                </div>
+                <div class="modal-body">
+                    <form id="category-form" style="display:flex; gap:10px; margin-bottom:20px;">
+                        <input type="text" id="category-name" class="form-control" placeholder="New Category Name" required />
+                        <button type="submit" class="btn btn-primary">Add</button>
+                    </form>
+                    <div id="category-list" style="max-height:300px; overflow-y:auto;">
+                        <!-- Populated via JS -->
+                    </div>
                 </div>
             </div>
 
@@ -570,9 +602,29 @@
                             </tbody>
                         </table>
                         <p>----------------------------</p>
-                        <div class="receipt-total">
+                        <div class="receipt-total" style="display:flex; justify-content:space-between; font-size: 14px; margin-bottom: 5px;">
+                            <span>SUB TOTAL:</span>
+                            <span id="receipt-sub-total"></span>
+                        </div>
+                        <div class="receipt-total" style="display:flex; justify-content:space-between; font-size: 14px; margin-bottom: 5px;">
+                            <span>DISCOUNT:</span>
+                            <span id="receipt-discount"></span>
+                        </div>
+                        <div class="receipt-total" style="display:flex; justify-content:space-between; font-size: 14px; margin-bottom: 5px;">
+                            <span>DELIVERY:</span>
+                            <span id="receipt-delivery-fee"></span>
+                        </div>
+                        <div class="receipt-total" style="display:flex; justify-content:space-between; font-weight: bold; font-size: 18px; margin-bottom: 10px;">
                             <span>TOTAL:</span>
                             <span id="receipt-total-amount"></span>
+                        </div>
+                        <div class="receipt-total" style="display:flex; justify-content:space-between; font-size: 14px; margin-bottom: 5px;">
+                            <span>ADVANCE:</span>
+                            <span id="receipt-advance-payment"></span>
+                        </div>
+                        <div class="receipt-total" style="display:flex; justify-content:space-between; font-weight: bold; font-size: 16px; margin-bottom: 15px;">
+                            <span>BALANCE:</span>
+                            <span id="receipt-balance"></span>
                         </div>
                         <div class="receipt-footer">
                             <div id="receipt-bank-details-wrapper" style="font-size: 11px; text-align: left; margin-bottom: 10px; display: none;">
