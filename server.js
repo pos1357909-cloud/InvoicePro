@@ -49,7 +49,10 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     try {
-        const user = await User.findOne({ email: String(email), password: String(password) });
+        const user = await User.findOne({ 
+            email: new RegExp('^' + String(email) + '$', 'i'), 
+            password: String(password) 
+        });
         if (!user) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
@@ -185,11 +188,15 @@ app.post('/api/admin/users', adminMiddleware, async (req, res) => {
 });
 
 app.put('/api/admin/users/:id', adminMiddleware, async (req, res) => {
-    const { email, business_name, whatsapp_number, marketplace_enabled, status } = req.body;
+    const { email, business_name, whatsapp_number, marketplace_enabled, status, password } = req.body;
     try {
+        const updateData = { email, business_name, whatsapp_number, marketplace_enabled, status };
+        if (password && password.trim() !== '') {
+            updateData.password = password;
+        }
         const user = await User.findByIdAndUpdate(
             req.params.id,
-            { email, business_name, whatsapp_number, marketplace_enabled, status },
+            updateData,
             { new: true }
         ).select('-password');
         if (!user) return res.status(404).json({ error: 'User not found' });
