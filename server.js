@@ -21,8 +21,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 // ==== AUTH API ====
 
 app.post('/api/auth/register', async (req, res) => {
-    const { email, business_name, whatsapp_number } = req.body;
-    if (!email || !business_name || !whatsapp_number) {
+    const { email, password, business_name, whatsapp_number } = req.body;
+    if (!email || !password || !business_name || !whatsapp_number) {
         return res.status(400).json({ error: 'Missing required fields' });
     }
     
@@ -32,7 +32,7 @@ app.post('/api/auth/register', async (req, res) => {
             return res.status(400).json({ error: 'User already exists' });
         }
         
-        const user = await User.create({ email: String(email), business_name: String(business_name), whatsapp_number: String(whatsapp_number), status: 'pending' });
+        const user = await User.create({ email: String(email), password: String(password), business_name: String(business_name), whatsapp_number: String(whatsapp_number), status: 'pending' });
         res.status(201).json({ 
             message: 'Registration submitted successfully. Please wait for an Admin to approve your request.',
             pending: true
@@ -43,14 +43,15 @@ app.post('/api/auth/register', async (req, res) => {
 });
 
 app.post('/api/auth/login', async (req, res) => {
-    const { email } = req.body;
-    if (!email) {
+    const { email, password } = req.body;
+    if (!email || !password) {
         return res.status(400).json({ error: 'Missing required fields' });
     }
 
     try {
         const user = await User.findOne({ 
-            email: new RegExp('^' + String(email) + '$', 'i')
+            email: new RegExp('^' + String(email) + '$', 'i'),
+            password: String(password)
         });
         if (!user) {
             return res.status(401).json({ error: 'Invalid credentials' });
@@ -130,9 +131,12 @@ app.get('/api/profile', async (req, res) => {
 });
 
 app.put('/api/profile', async (req, res) => {
-    const { email, business_name, whatsapp_number, profile_picture, bank_details } = req.body;
+    const { email, business_name, whatsapp_number, profile_picture, bank_details, password } = req.body;
     try {
         const updateData = { email, business_name, whatsapp_number, profile_picture, bank_details };
+        if (password && password.trim() !== '') {
+            updateData.password = password;
+        }
 
         await User.findByIdAndUpdate(req.user._id, updateData);
         res.json({ message: 'Profile updated successfully' });
@@ -143,7 +147,7 @@ app.put('/api/profile', async (req, res) => {
 
 app.get('/api/admin/users', adminMiddleware, async (req, res) => {
     try {
-        const users = await User.find({ role: { $ne: 'admin' } });
+        const users = await User.find({ role: { $ne: 'admin' } }).select('-password');
         const mappedUsers = users.map(u => ({
             id: u._id.toString(),
             email: u.email,
@@ -161,8 +165,8 @@ app.get('/api/admin/users', adminMiddleware, async (req, res) => {
 });
 
 app.post('/api/admin/users', adminMiddleware, async (req, res) => {
-    const { email, business_name, whatsapp_number, marketplace_enabled, status } = req.body;
-    if (!email || !business_name) {
+    const { email, password, business_name, whatsapp_number, marketplace_enabled, status } = req.body;
+    if (!email || !password || !business_name) {
         return res.status(400).json({ error: 'Missing required fields' });
     }
     try {
@@ -171,6 +175,7 @@ app.post('/api/admin/users', adminMiddleware, async (req, res) => {
         
         const user = await User.create({ 
             email: String(email), 
+            password: String(password),
             business_name: String(business_name), 
             whatsapp_number: String(whatsapp_number || ''), 
             marketplace_enabled: Boolean(marketplace_enabled),
@@ -183,14 +188,17 @@ app.post('/api/admin/users', adminMiddleware, async (req, res) => {
 });
 
 app.put('/api/admin/users/:id', adminMiddleware, async (req, res) => {
-    const { email, business_name, whatsapp_number, marketplace_enabled, status } = req.body;
+    const { email, business_name, whatsapp_number, marketplace_enabled, status, password } = req.body;
     try {
         const updateData = { email, business_name, whatsapp_number, marketplace_enabled, status };
+        if (password && password.trim() !== '') {
+            updateData.password = password;
+        }
         const user = await User.findByIdAndUpdate(
             req.params.id,
             updateData,
             { new: true }
-        );
+        ).select('-password');
         if (!user) return res.status(404).json({ error: 'User not found' });
         res.json({ message: 'User updated successfully' });
     } catch (err) {
