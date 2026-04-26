@@ -28,7 +28,6 @@ const connectDB = async () => {
 
 const UserSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
     business_name: { type: String, required: true },
     whatsapp_number: { type: String },
     marketplace_enabled: { type: Boolean, default: false },
@@ -96,7 +95,6 @@ const initializeDatabase = async () => {
         if (!adminExists) {
             await User.create({
                 email: 'Admin',
-                password: 'LN24@123z',
                 business_name: 'Admin Portal',
                 role: 'admin',
                 status: 'approved'

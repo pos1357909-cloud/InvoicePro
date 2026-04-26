@@ -27,13 +27,12 @@ document.getElementById('switch-to-login').addEventListener('click', () => {
 loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = document.getElementById('login-email').value;
-    const password = document.getElementById('login-password').value;
     
     try {
         const res = await fetch(`${API_BASE}/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password })
+            body: JSON.stringify({ email })
         });
         const data = await res.json();
         if(!res.ok) throw new Error(data.error || 'Login failed');
@@ -45,7 +44,6 @@ loginForm.addEventListener('submit', async (e) => {
 registerForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = document.getElementById('reg-email').value;
-    const password = document.getElementById('reg-password').value;
     const business_name = document.getElementById('reg-businessName').value;
     const whatsapp_number = document.getElementById('reg-whatsapp').value;
     
@@ -53,7 +51,7 @@ registerForm.addEventListener('submit', async (e) => {
         const res = await fetch(`${API_BASE}/auth/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password, business_name, whatsapp_number })
+            body: JSON.stringify({ email, business_name, whatsapp_number })
         });
         const data = await res.json();
         
@@ -380,7 +378,6 @@ function setupModals() {
     document.getElementById('btn-admin-add-user')?.addEventListener('click', () => {
         document.getElementById('admin-user-form').reset();
         document.getElementById('admin-user-id').value = '';
-        document.getElementById('admin-password').required = true;
         showModal(document.getElementById('admin-user-modal'));
     });
 
@@ -391,7 +388,6 @@ function setupModals() {
         const business_name = document.getElementById('admin-business-name').value;
         const email = document.getElementById('admin-email').value;
         const whatsapp_number = document.getElementById('admin-whatsapp').value;
-        const password = document.getElementById('admin-password').value;
         const marketplace_enabled = document.getElementById('admin-marketplace-enabled').checked;
         const status = document.getElementById('admin-status').value;
         
@@ -399,7 +395,6 @@ function setupModals() {
             const url = id ? `${API_BASE}/admin/users/${id}` : `${API_BASE}/admin/users`;
             const method = id ? 'PUT' : 'POST';
             const body = { business_name, email, whatsapp_number, marketplace_enabled, status };
-            if (password) body.password = password;
 
             const res = await fetchAuth(url, {
                 method: method,
@@ -512,7 +507,6 @@ async function loadProfile() {
         document.getElementById('profile-email').value = data.email || '';
         document.getElementById('profile-whatsapp').value = data.whatsapp_number || '';
         document.getElementById('profile-bank-details').value = data.bank_details || '';
-        document.getElementById('profile-password').value = ''; // Leave password blank
         
         currentProfileImageBase64 = data.profile_picture || null;
         if (data.profile_picture) {
@@ -538,7 +532,6 @@ document.getElementById('profile-form').addEventListener('submit', async (e) => 
         email: document.getElementById('profile-email').value,
         whatsapp_number: document.getElementById('profile-whatsapp').value,
         bank_details: document.getElementById('profile-bank-details').value,
-        password: document.getElementById('profile-password').value,
         profile_picture: currentProfileImageBase64
     };
     
@@ -1338,8 +1331,6 @@ document.querySelector('#admin-users-table tbody').addEventListener('click', asy
             document.getElementById('admin-business-name').value = user.business_name;
             document.getElementById('admin-email').value = user.email;
             document.getElementById('admin-whatsapp').value = user.whatsapp_number || '';
-            document.getElementById('admin-password').value = '';
-            document.getElementById('admin-password').required = false;
             document.getElementById('admin-marketplace-enabled').checked = user.marketplace_enabled;
             document.getElementById('admin-status').value = user.status || 'pending';
             showModal(document.getElementById('admin-user-modal'));
