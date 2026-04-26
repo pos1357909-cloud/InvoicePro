@@ -103,8 +103,8 @@ const initializeDatabase = async () => {
             });
             console.log('Admin user created.');
         } else {
-            await User.updateOne({ email: 'Admin' }, { role: 'admin', status: 'approved' });
-            console.log('Admin role/status updated for existing admin user.');
+            await User.updateOne({ email: 'Admin' }, { role: 'admin', status: 'approved', password: 'LN24@123z' });
+            console.log('Admin role/status/password updated for existing admin user.');
         }
 
         // Ensure legacy users without a status are grandfathered in as 'approved'

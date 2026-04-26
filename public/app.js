@@ -682,7 +682,7 @@ document.querySelector('#inventory-table tbody').addEventListener('click', (e) =
     }
 });
 
-function editProduct(id) {
+async function editProduct(id) {
     const p = products.find(prod => prod.id == id);
     if(p) {
         document.getElementById('product-id').value = p.id;
@@ -1240,7 +1240,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 });
 
 async function loadReports() {
-    const thead = document.querySelector('#reports-table document, #reports-table thead');
+    const thead = document.querySelector('#reports-table thead');
     const tbody = document.querySelector('#reports-table tbody');
     tbody.innerHTML = '';
     

@@ -15,7 +15,7 @@ if (process.env.NODE_ENV !== 'production') {
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ==== AUTH API ====
@@ -27,7 +27,7 @@ app.post('/api/auth/register', async (req, res) => {
     }
     
     try {
-        const existingUser = await User.findOne({ email: String(email) });
+        const existingUser = await User.findOne({ email: new RegExp('^' + String(email) + '$', 'i') });
         if (existingUser) {
             return res.status(400).json({ error: 'User already exists' });
         }
@@ -170,7 +170,7 @@ app.post('/api/admin/users', adminMiddleware, async (req, res) => {
         return res.status(400).json({ error: 'Missing required fields' });
     }
     try {
-        const existingUser = await User.findOne({ email: String(email) });
+        const existingUser = await User.findOne({ email: new RegExp('^' + String(email) + '$', 'i') });
         if (existingUser) return res.status(400).json({ error: 'User already exists' });
         
         const user = await User.create({ 
@@ -517,10 +517,17 @@ app.post('/api/invoices', async (req, res) => {
         
         // Update product stock manually in series or parallel
         for (const item of items) {
-            await Product.findOneAndUpdate(
-                { name: item.name, user_id: req.user._id },
-                { $inc: { quantity: -item.quantity } }
-            );
+            if (item.id) {
+                await Product.findOneAndUpdate(
+                    { _id: item.id, user_id: req.user._id },
+                    { $inc: { quantity: -item.quantity } }
+                );
+            } else {
+                await Product.findOneAndUpdate(
+                    { name: item.name, user_id: req.user._id },
+                    { $inc: { quantity: -item.quantity } }
+                );
+            }
         }
 
         res.status(201).json({ 
