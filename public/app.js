@@ -207,6 +207,37 @@ function updateClock() {
 }
 
 function setupNavigation() {
+    // ==== MOBILE SIDEBAR TOGGLE ====
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebar-overlay');
+    const btnHamburger = document.getElementById('btn-hamburger');
+
+    function openSidebar() {
+        sidebar.classList.add('open');
+        sidebarOverlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeSidebar() {
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    if (btnHamburger) {
+        btnHamburger.addEventListener('click', () => {
+            if (sidebar.classList.contains('open')) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
+        });
+    }
+
+    if (sidebarOverlay) {
+        sidebarOverlay.addEventListener('click', closeSidebar);
+    }
+
     navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
@@ -219,6 +250,11 @@ function setupNavigation() {
             
             pageTitle.textContent = link.querySelector('.link-name').textContent;
             currentTab = target;
+
+            // Close sidebar on mobile after nav item click
+            if (window.innerWidth <= 768) {
+                closeSidebar();
+            }
             
             // Load specific view data
             if(target === 'dashboard-view') loadDashboard();

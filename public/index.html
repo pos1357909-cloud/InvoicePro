@@ -128,15 +128,20 @@
         <main class="main-content">
             <!-- Header -->
             <header class="top-header">
-                <div class="header-title">
-                    <h1 id="page-title">Dashboard</h1>
+                <div class="header-left">
+                    <button class="btn-hamburger" id="btn-hamburger" aria-label="Toggle Menu">
+                        <i class="bx bx-menu"></i>
+                    </button>
+                    <div class="header-title">
+                        <h1 id="page-title">Dashboard</h1>
+                    </div>
                 </div>
                 <div class="header-right">
-                    <button class="btn btn-outline" id="btn-create-marketplace" style="margin-right:12px;"><i
-                            class="bx bx-globe"></i> MarketPlace</button>
+                    <button class="btn btn-outline btn-marketplace" id="btn-create-marketplace"><i
+                            class="bx bx-globe"></i> <span class="marketplace-text">MarketPlace</span></button>
                     <div class="time-display" id="clock">00:00 AM</div>
                     <div class="user-profile">
-                        <span id="business-name-display" style="font-weight:600;margin-right:12px;">Admin</span>
+                        <span id="business-name-display" class="business-name-text" style="font-weight:600;margin-right:12px;">Admin</span>
                         <img id="user-avatar" src="https://ui-avatars.com/api/?name=Admin&background=6366f1&color=fff" alt="User" />
                         <button id="btn-logout" class="btn btn-outline btn-sm"
                             style="margin-left: 10px; padding: 6px 12px; font-size:12px;"><i
@@ -643,6 +648,8 @@
             </div>
         </div>
     </div> <!-- End of app-wrapper -->
+    <!-- Mobile Sidebar Overlay -->
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
 
     <script src="/app.js"></script>
 </body>
