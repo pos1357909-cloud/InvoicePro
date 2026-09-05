@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -127,7 +127,10 @@ th{background:#f1f5fa;color:#40506a;white-space:nowrap}
 </section>
 
 <section id="products" class="page">
-  <div class="pagehead"><h2>&#128218; Products &amp; Stock</h2></div>
+  <div class="pagehead">
+    <h2>&#128218; Products &amp; Stock</h2>
+    <button class="btn green" onclick="syncPosProducts()">&#8635; Sync from POS</button>
+  </div>
   <form id="prodForm"><input type="hidden" id="pId"><div class="grid">
     <label>Product Name<input id="pName" required></label>
     <label>Grade<input id="pGrade" placeholder="Grade 11"></label>
@@ -199,6 +202,48 @@ function renderProducts(){const cg=sGrade?.value||'';renderSaleGrades(cg);produc
 function renderGradeFilter(){if(!prodGradeFilter)return;const cur=prodGradeFilter.value;const grades=gradeList();prodGradeFilter.innerHTML='<option value="">All Grades</option>'+grades.map(g=>`<option value="${esc(g)}">${esc(g)}</option>`).join('');if(grades.includes(cur))prodGradeFilter.value=cur;}
 function renderGradeDetails(){if(!gradeDetails)return;const filter=prodGradeFilter?.value||'';const grades=filter?[filter]:gradeList();if(!grades.length){gradeDetails.innerHTML='<div class="empty">No products yet.</div>';return;}gradeDetails.innerHTML=grades.map(g=>{const items=db.products.filter(p=>(p.grade||'Unspecified').trim()===g);const stock=items.reduce((a,p)=>a+p.stock,0),value=items.reduce((a,p)=>a+p.buy*p.stock,0);const gk='grade-'+String(g).replace(/[^a-zA-Z0-9_-]/g,'_');return `<div class="panel" style="margin-bottom:12px;padding:0;overflow:hidden"><button type="button" onclick="toggleGrade('${gk}')" style="width:100%;border:0;background:#fff;padding:16px 18px;cursor:pointer;text-align:left"><div class="pagehead" style="margin:0"><h4 style="margin:0">&#9658; Grade: ${esc(g)}</h4><span class="badge">${items.length} Product${items.length===1?'':'s'} | Stock ${stock} | ${money(value)}</span></div></button><div id="${gk}" style="display:none;padding:0 18px 18px"><div class="tablewrap"><table><thead><tr><th>Product</th><th>Subject</th><th>Buy</th><th>Sell</th><th>Stock</th><th>Stock Value</th><th>Actions</th></tr></thead><tbody>${items.map(p=>`<tr><td>${esc(p.name)}</td><td>${esc(p.subject)}</td><td>${money(p.buy)}</td><td>${money(p.sell)}</td><td class="${p.stock<=5?'stocklow':''}">${p.stock}</td><td>${money(p.buy*p.stock)}</td><td><button class="btn light" onclick="editProduct('${p.id}')">Edit</button></td></tr>`).join('')}</tbody></table></div></div></div>`;}).join('');}
 function toggleGrade(id){const el=document.getElementById(id);if(!el)return;const btn=el.previousElementSibling;const title=btn?.querySelector('h4');const open=el.style.display==='none';el.style.display=open?'block':'none';if(title)title.textContent=(open?'&#9660; ':'&#9658; ')+title.textContent.replace(/^[\u25b6\u25bc] /,'');}
+
+async function syncPosProducts() {
+  const token = localStorage.getItem('pos_token');
+  if (!token) return alert('POS token not found. Please login to POS System first.');
+  try {
+    const res = await fetch('/api/products', { headers: { 'Authorization': `Bearer ${token}` } });
+    if (!res.ok) throw new Error('Failed to fetch from POS API');
+    const posProducts = await res.json();
+    let added = 0, updated = 0;
+    
+    posProducts.forEach(pp => {
+      const existing = db.products.find(p => p.name.toLowerCase() === pp.name.toLowerCase());
+      const buyPrice = Number(pp.price) / 2;
+      const sellPrice = Number(pp.price);
+      
+      if (existing) {
+        existing.stock = Number(pp.quantity);
+        existing.buy = buyPrice;
+        existing.sell = sellPrice;
+        updated++;
+      } else {
+        db.products.push({
+          id: uid(),
+          name: pp.name,
+          grade: pp.category || 'General',
+          subject: '',
+          buy: buyPrice,
+          sell: sellPrice,
+          stock: Number(pp.quantity)
+        });
+        added++;
+      }
+    });
+    
+    localStorage.setItem(key, JSON.stringify(db));
+    render();
+    toast(`POS Sync: ${added} added, ${updated} updated!`);
+  } catch (err) {
+    alert('Error syncing from POS: ' + err.message);
+  }
+}
+
 function resetProdForm(){prodForm.reset();pId.value='';prodSubmit.textContent='Add Product'}
 function editProduct(id){const p=db.products.find(x=>x.id===id);if(!p)return;pId.value=p.id;pName.value=p.name;pGrade.value=p.grade;pSubject.value=p.subject;pBuy.value=p.buy;pSell.value=p.sell;pStock.value=p.stock;prodSubmit.textContent='Update Product';showPage('products',[...document.querySelectorAll('nav button')][3]);window.scrollTo({top:0,behavior:'smooth'})}
 prodForm.onsubmit=e=>{e.preventDefault();const data={name:pName.value.trim(),grade:pGrade.value.trim(),subject:pSubject.value.trim(),buy:+pBuy.value,sell:+pSell.value,stock:+pStock.value};if(!data.name)return alert('Enter a product name.');if(data.sell<0||data.buy<0||data.stock<0)return alert('Invalid values.');if(pId.value){const p=db.products.find(x=>x.id===pId.value);if(p)Object.assign(p,data);toast('Product updated!')}else{db.products.push({...data,id:uid()});toast('Product added!')}localStorage.setItem(key,JSON.stringify(db));render();resetProdForm()};
