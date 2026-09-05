@@ -650,6 +650,11 @@ app.get('/api/public/store/:business_name', async (req, res) => {
     }
 });
 
+// Money Manager Page - must be before /:business_name catch-all
+app.get('/money-manager', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'money-manager.html'));
+});
+
 // Serves the public marketplace UI
 app.get('/:business_name', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'marketplace.html'));

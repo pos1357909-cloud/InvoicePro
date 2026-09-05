@@ -1,0 +1,225 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DN POTH STORE — Money Manager</title>
+<style>
+:root{--primary:#123b75;--primary2:#1d5aa6;--bg:#f4f7fb;--card:#fff;--text:#172033;--muted:#6b778c;--border:#e0e6ef;--danger:#c0392b;--success:#138a4b;--warning:#a66a00}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,Arial,sans-serif;background:var(--bg);color:var(--text)}
+.topbar{background:linear-gradient(135deg,#0d2f5d,#1d5aa6);color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;box-shadow:0 3px 15px #0002}
+.topbar-left{display:flex;align-items:center;gap:14px}
+.back-btn{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,0.18);border:1.5px solid rgba(255,255,255,0.35);color:#fff;padding:8px 14px;border-radius:10px;text-decoration:none;font-size:13px;font-weight:700;transition:background .2s}
+.back-btn:hover{background:rgba(255,255,255,0.30)}
+.topbar h1{margin:0;font-size:21px;font-weight:800;letter-spacing:-.3px}
+.topbar small{opacity:.85;font-size:12px}.date{font-size:13px;opacity:.9}
+nav{background:#fff;padding:10px;display:flex;gap:8px;overflow:auto;box-shadow:0 2px 8px #0001;position:sticky;top:0;z-index:5}
+nav button{border:0;background:#eef3fa;color:#24324a;padding:11px 15px;border-radius:9px;cursor:pointer;white-space:nowrap;font-weight:600;font-size:14px}
+nav button:hover{background:#dde8f7}nav button.active{background:var(--primary);color:#fff}
+main{max-width:1280px;margin:auto;padding:22px}.page{display:none}.page.active{display:block}
+.pagehead{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}.pagehead h2{margin:0}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:14px;margin-bottom:20px}
+.card,.panel,form{background:var(--card);padding:18px;border-radius:15px;box-shadow:0 3px 14px #0000000d;border:1px solid #edf1f6}
+.card span{font-size:13px;color:var(--muted)}.card strong{display:block;font-size:24px;margin-top:8px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:13px}
+label{font-size:13px;font-weight:700;color:#33415a}
+input,select{width:100%;padding:11px;margin-top:6px;border:1px solid #d6deea;border-radius:9px;background:#fff;color:var(--text);outline:none;font-size:14px}
+input:focus,select:focus{border-color:#5c8fca;box-shadow:0 0 0 3px #1d5aa615}
+.btn{border:0;padding:10px 14px;border-radius:9px;cursor:pointer;background:var(--primary);color:#fff;margin-top:13px;font-weight:700;font-size:14px}
+.btn:hover{filter:brightness(1.08)}.btn.red{background:var(--danger)}.btn.gray{background:#687386}.btn.green{background:var(--success)}.btn.light{background:#edf3fb;color:var(--primary)}
+.actions{display:flex;gap:8px;flex-wrap:wrap}.note{font-size:13px;color:var(--muted)}
+.tablewrap{overflow:auto;border-radius:12px}.tablewrap table{min-width:700px}
+table{width:100%;border-collapse:collapse;background:#fff}
+th,td{padding:11px;border-bottom:1px solid #edf0f5;text-align:left;font-size:14px}
+th{background:#f1f5fa;color:#40506a;white-space:nowrap}
+.profit{color:var(--success);font-weight:700}.loss{color:var(--danger);font-weight:700}.stocklow{color:var(--warning);font-weight:700}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.toolbar input{max-width:330px;margin:0}.toolbar select{max-width:180px;margin:0}
+.empty{text-align:center;color:var(--muted);padding:25px}
+.badge{display:inline-block;padding:4px 8px;border-radius:20px;background:#edf3fb;color:var(--primary);font-size:12px;font-weight:700}
+.toast{position:fixed;right:18px;bottom:18px;background:#172033;color:#fff;padding:12px 16px;border-radius:10px;display:none;z-index:30;box-shadow:0 8px 25px #0003}
+@media(max-width:600px){
+  main{padding:12px}.card strong{font-size:20px}.topbar{padding:12px 14px}.topbar h1{font-size:17px}
+  .pagehead h2{font-size:18px}.cards{grid-template-columns:repeat(2,1fr);gap:10px}.card{padding:14px 12px}
+  .grid{grid-template-columns:1fr}nav{padding:8px;gap:6px}nav button{padding:9px 11px;font-size:13px}
+  .tablewrap table{min-width:520px}th,td{padding:9px;font-size:13px}
+}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-left">
+    <a href="/" class="back-btn">&#8592; POS System</a>
+    <div><h1>&#128176; DN POTH STORE</h1><small>Professional Money Management System</small></div>
+  </div>
+  <div class="date" id="today"></div>
+</div>
+<nav id="nav">
+  <button class="active" onclick="showPage('dashboard',this)">&#128202; Dashboard</button>
+  <button onclick="showPage('sales',this)">&#128722; Sales</button>
+  <button onclick="showPage('expenses',this)">&#128184; Expenses</button>
+  <button onclick="showPage('products',this)">&#128218; Products</button>
+  <button onclick="showPage('reports',this)">&#128200; Reports</button>
+  <button onclick="showPage('backup',this)">&#128190; Backup</button>
+</nav>
+<main>
+<section id="dashboard" class="page active">
+  <div class="pagehead"><h2>&#128202; Dashboard</h2><span class="badge">Auto-save enabled</span></div>
+  <div class="cards">
+    <div class="card"><span>Total Sales</span><strong id="dSales">Rs. 0.00</strong></div>
+    <div class="card"><span>Product Cost</span><strong id="dCost">Rs. 0.00</strong></div>
+    <div class="card"><span>Expenses</span><strong id="dExp">Rs. 0.00</strong></div>
+    <div class="card"><span>Net Profit</span><strong id="dProfit">Rs. 0.00</strong></div>
+    <div class="card"><span>Cash in Hand</span><strong id="dCash">Rs. 0.00</strong></div>
+    <div class="card"><span>Stock Value</span><strong id="dStock">Rs. 0.00</strong></div>
+  </div>
+  <div class="panel"><h3>Quick Actions</h3><div class="actions">
+    <button class="btn" onclick="go('sales')">+ Add Sale</button>
+    <button class="btn" onclick="go('expenses')">+ Add Expense</button>
+    <button class="btn" onclick="go('products')">+ Add Product</button>
+  </div></div>
+  <div class="panel"><h3>Low Stock Alert</h3>
+    <div class="tablewrap"><table><thead><tr><th>Product</th><th>Grade</th><th>Subject</th><th>Stock</th></tr></thead><tbody id="lowStockTable"></tbody></table></div>
+  </div>
+</section>
+
+<section id="sales" class="page">
+  <div class="pagehead"><h2>&#128722; Sales</h2><button class="btn" onclick="resetSaleForm()">+ New Sale</button></div>
+  <form id="saleForm"><input type="hidden" id="sId"><div class="grid">
+    <label>Date<input type="date" id="sDate" required></label>
+    <label>Grade<select id="sGrade" onchange="productOptionsByGrade()" required></select></label>
+    <label>Product<select id="sProduct" required></select></label>
+    <label>Quantity<input type="number" id="sQty" min="1" value="1" required></label>
+    <label>Discount (Rs.)<input type="number" id="sDiscount" min="0" value="0"></label>
+    <label>Payment<select id="sPayment"><option>Cash</option><option>Bank</option><option>Online</option><option>COD</option></select></label>
+  </div>
+  <button class="btn" id="saleSubmit">Save Sale</button>
+  <button type="button" class="btn gray" onclick="resetSaleForm()">Clear</button>
+  <p class="note">Selling price and buying cost are taken automatically from the selected product.</p>
+  </form>
+  <div class="toolbar">
+    <input id="saleSearch" placeholder="Search sales..." oninput="renderSales()">
+    <select id="salePayFilter" onchange="renderSales()"><option value="">All payments</option><option>Cash</option><option>Bank</option><option>Online</option><option>COD</option></select>
+  </div>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Date</th><th>Grade</th><th>Product</th><th>Qty</th><th>Total</th><th>Cost</th><th>Profit</th><th>Payment</th><th>Actions</th></tr></thead>
+    <tbody id="salesTable"></tbody>
+  </table></div>
+</section>
+
+<section id="expenses" class="page">
+  <div class="pagehead"><h2>&#128184; Expenses</h2></div>
+  <form id="expForm"><input type="hidden" id="eId"><div class="grid">
+    <label>Date<input type="date" id="eDate" required></label>
+    <label>Category<select id="eCat"><option>Delivery</option><option>Printing</option><option>Packaging</option><option>Advertising</option><option>Transport</option><option>Electricity</option><option>Return Free</option><option>Other</option></select></label>
+    <label>Description<input id="eDesc" placeholder="Expense details"></label>
+    <label>Amount (Rs.)<input type="number" id="eAmount" min="0" step="0.01" required></label>
+    <label>Payment<select id="ePayment"><option>Cash</option><option>Bank</option><option>Online</option></select></label>
+  </div>
+  <button class="btn" id="expSubmit">Save Expense</button>
+  <button type="button" class="btn gray" onclick="resetExpForm()">Clear</button>
+  </form>
+  <div class="toolbar"><input id="expSearch" placeholder="Search expenses..." oninput="renderExpenses()"></div>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th><th>Payment</th><th>Actions</th></tr></thead>
+    <tbody id="expTable"></tbody>
+  </table></div>
+</section>
+
+<section id="products" class="page">
+  <div class="pagehead"><h2>&#128218; Products &amp; Stock</h2></div>
+  <form id="prodForm"><input type="hidden" id="pId"><div class="grid">
+    <label>Product Name<input id="pName" required></label>
+    <label>Grade<input id="pGrade" placeholder="Grade 11"></label>
+    <label>Subject<input id="pSubject" placeholder="Buddhism"></label>
+    <label>Buying Price<input type="number" id="pBuy" min="0" step="0.01" required></label>
+    <label>Selling Price<input type="number" id="pSell" min="0" step="0.01" required></label>
+    <label>Stock Qty<input type="number" id="pStock" min="0" required></label>
+  </div>
+  <button class="btn" id="prodSubmit">Add Product</button>
+  <button type="button" class="btn gray" onclick="resetProdForm()">Clear</button>
+  </form>
+  <div class="panel" style="margin-top:18px">
+    <div class="pagehead"><h3>&#128203; Grade-wise Details</h3>
+      <select id="prodGradeFilter" onchange="renderGradeDetails()" style="max-width:220px;margin:0"><option value="">All Grades</option></select>
+    </div>
+    <div id="gradeDetails"></div>
+  </div>
+</section>
+
+<section id="reports" class="page">
+  <div class="pagehead"><h2>&#128200; Reports</h2></div>
+  <div class="panel"><div class="grid">
+    <label>From<input type="date" id="rFrom"></label>
+    <label>To<input type="date" id="rTo"></label>
+  </div><button class="btn" onclick="report()">Generate Report</button></div>
+  <div class="cards">
+    <div class="card"><span>Sales</span><strong id="rSales">Rs. 0.00</strong></div>
+    <div class="card"><span>Product Cost</span><strong id="rCost">Rs. 0.00</strong></div>
+    <div class="card"><span>Expenses</span><strong id="rExp">Rs. 0.00</strong></div>
+    <div class="card"><span>Net Profit</span><strong id="rProfit">Rs. 0.00</strong></div>
+  </div>
+</section>
+
+<section id="backup" class="page">
+  <div class="pagehead"><h2>&#128190; Backup &amp; Restore</h2></div>
+  <div class="panel">
+    <p>All data is automatically saved in this browser. Use backup regularly before changing devices or clearing browser data.</p>
+    <button class="btn" onclick="downloadBackup()">&#8595; Download Backup</button>
+    <div style="margin-top:15px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <input type="file" id="restoreFile" accept=".json" style="width:auto;margin:0">
+      <button class="btn gray" style="margin-top:0" onclick="restoreBackup()">Restore Backup</button>
+    </div>
+    <button class="btn red" onclick="clearAll()">Delete All Data</button>
+  </div>
+</section>
+</main>
+<div class="toast" id="toast"></div>
+<script>
+const key='dn_poth_store_v2';const oldKey='dn_poth_store_v1';
+const blank=()=>({products:[],sales:[],expenses:[]});let db=loadDB();
+function loadDB(){try{let raw=localStorage.getItem(key);if(!raw)raw=localStorage.getItem(oldKey);const d=raw?JSON.parse(raw):blank();d.products=Array.isArray(d.products)?d.products:[];d.sales=Array.isArray(d.sales)?d.sales:[];d.expenses=Array.isArray(d.expenses)?d.expenses:[];d.products.forEach(p=>{if(!p.id)p.id=uid();p.buy=+p.buy||0;p.sell=+p.sell||0;p.stock=+p.stock||0});d.sales.forEach(s=>{if(!s.id)s.id=uid();s.qty=+s.qty||0;s.total=+s.total||0;s.cost=+s.cost||0;s.discount=Number.isFinite(+s.discount)?Math.max(0,+s.discount):0;s.profit=Number.isFinite(+s.profit)?+s.profit:s.total-s.cost;if(!s.grade){const p=d.products.find(p=>p.id===s.productId);s.grade=p?.grade||'';}});d.expenses.forEach(e=>{if(!e.id)e.id=uid();e.amount=+e.amount||0});localStorage.setItem(key,JSON.stringify(d));return d;}catch(e){alert('Saved data could not be read.');return blank()}}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
+const money=n=>'Rs. '+Number(n||0).toLocaleString('en-LK',{minimumFractionDigits:2,maximumFractionDigits:2});
+const today=new Date().toISOString().slice(0,10);
+document.getElementById('today').textContent=new Date().toLocaleDateString('en-LK',{year:'numeric',month:'long',day:'numeric'});
+['sDate','eDate','rFrom','rTo'].forEach(id=>document.getElementById(id).value=today);
+function save(){try{localStorage.setItem(key,JSON.stringify(db));render();toast('Saved successfully!')}catch(e){alert('Could not save. Download a backup.')}}
+function showPage(id,btn){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));if(btn)btn.classList.add('active');}
+function go(id){const b=[...document.querySelectorAll('nav button')].find(x=>x.getAttribute('onclick')?.includes("'"+id+"'"));showPage(id,b)}
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';clearTimeout(window._toast);window._toast=setTimeout(()=>t.style.display='none',1800)}
+function render(){renderProducts();renderSales();renderExpenses();renderDashboard();report()}
+function renderDashboard(){const sales=db.sales.reduce((a,x)=>a+x.total,0),cost=db.sales.reduce((a,x)=>a+x.cost,0),exp=db.expenses.reduce((a,x)=>a+x.amount,0);dSales.textContent=money(sales);dCost.textContent=money(cost);dExp.textContent=money(exp);dProfit.textContent=money(sales-cost-exp);const cashSales=db.sales.filter(x=>x.payment==='Cash').reduce((a,x)=>a+x.total,0);const cashExp=db.expenses.filter(x=>x.payment==='Cash').reduce((a,x)=>a+x.amount,0);dCash.textContent=money(cashSales-cashExp);dStock.textContent=money(db.products.reduce((a,p)=>a+p.buy*p.stock,0));const low=db.products.filter(p=>p.stock<=5);lowStockTable.innerHTML=low.length?low.map(p=>`<tr><td>${esc(p.name)}</td><td>${esc(p.grade)}</td><td>${esc(p.subject)}</td><td class="${p.stock===0?'loss':'stocklow'}">${p.stock}</td></tr>`).join(''):'<tr><td colspan="4" class="empty">No low-stock products!</td></tr>';}
+function gradeList(){return[...new Set(db.products.map(p=>(p.grade||'Unspecified').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'}));}
+function productOptions(selected='',grade=''){let o='<option value="">Select Product</option>';db.products.filter(p=>!grade||((p.grade||'Unspecified').trim()===grade)).forEach(p=>o+=`<option value="${p.id}" ${p.id===selected?'selected':''}>${esc(p.name)} -- ${esc(p.subject||'')} -- Rs.${p.sell.toFixed(2)} (Stock ${p.stock})</option>`);sProduct.innerHTML=o;}
+function renderSaleGrades(selected=''){const grades=gradeList();let o='<option value="">Select Grade</option>';grades.forEach(g=>o+=`<option value="${esc(g)}" ${g===selected?'selected':''}>${esc(g)}</option>`);sGrade.innerHTML=o;}
+function productOptionsByGrade(selected=''){productOptions(selected,sGrade.value);}
+function renderProducts(){const cg=sGrade?.value||'';renderSaleGrades(cg);productOptions(sProduct?.value||'',cg);renderGradeFilter();renderGradeDetails();}
+function renderGradeFilter(){if(!prodGradeFilter)return;const cur=prodGradeFilter.value;const grades=gradeList();prodGradeFilter.innerHTML='<option value="">All Grades</option>'+grades.map(g=>`<option value="${esc(g)}">${esc(g)}</option>`).join('');if(grades.includes(cur))prodGradeFilter.value=cur;}
+function renderGradeDetails(){if(!gradeDetails)return;const filter=prodGradeFilter?.value||'';const grades=filter?[filter]:gradeList();if(!grades.length){gradeDetails.innerHTML='<div class="empty">No products yet.</div>';return;}gradeDetails.innerHTML=grades.map(g=>{const items=db.products.filter(p=>(p.grade||'Unspecified').trim()===g);const stock=items.reduce((a,p)=>a+p.stock,0),value=items.reduce((a,p)=>a+p.buy*p.stock,0);const gk='grade-'+String(g).replace(/[^a-zA-Z0-9_-]/g,'_');return `<div class="panel" style="margin-bottom:12px;padding:0;overflow:hidden"><button type="button" onclick="toggleGrade('${gk}')" style="width:100%;border:0;background:#fff;padding:16px 18px;cursor:pointer;text-align:left"><div class="pagehead" style="margin:0"><h4 style="margin:0">&#9658; Grade: ${esc(g)}</h4><span class="badge">${items.length} Product${items.length===1?'':'s'} | Stock ${stock} | ${money(value)}</span></div></button><div id="${gk}" style="display:none;padding:0 18px 18px"><div class="tablewrap"><table><thead><tr><th>Product</th><th>Subject</th><th>Buy</th><th>Sell</th><th>Stock</th><th>Stock Value</th><th>Actions</th></tr></thead><tbody>${items.map(p=>`<tr><td>${esc(p.name)}</td><td>${esc(p.subject)}</td><td>${money(p.buy)}</td><td>${money(p.sell)}</td><td class="${p.stock<=5?'stocklow':''}">${p.stock}</td><td>${money(p.buy*p.stock)}</td><td><button class="btn light" onclick="editProduct('${p.id}')">Edit</button></td></tr>`).join('')}</tbody></table></div></div></div>`;}).join('');}
+function toggleGrade(id){const el=document.getElementById(id);if(!el)return;const btn=el.previousElementSibling;const title=btn?.querySelector('h4');const open=el.style.display==='none';el.style.display=open?'block':'none';if(title)title.textContent=(open?'&#9660; ':'&#9658; ')+title.textContent.replace(/^[\u25b6\u25bc] /,'');}
+function resetProdForm(){prodForm.reset();pId.value='';prodSubmit.textContent='Add Product'}
+function editProduct(id){const p=db.products.find(x=>x.id===id);if(!p)return;pId.value=p.id;pName.value=p.name;pGrade.value=p.grade;pSubject.value=p.subject;pBuy.value=p.buy;pSell.value=p.sell;pStock.value=p.stock;prodSubmit.textContent='Update Product';showPage('products',[...document.querySelectorAll('nav button')][3]);window.scrollTo({top:0,behavior:'smooth'})}
+prodForm.onsubmit=e=>{e.preventDefault();const data={name:pName.value.trim(),grade:pGrade.value.trim(),subject:pSubject.value.trim(),buy:+pBuy.value,sell:+pSell.value,stock:+pStock.value};if(!data.name)return alert('Enter a product name.');if(data.sell<0||data.buy<0||data.stock<0)return alert('Invalid values.');if(pId.value){const p=db.products.find(x=>x.id===pId.value);if(p)Object.assign(p,data);toast('Product updated!')}else{db.products.push({...data,id:uid()});toast('Product added!')}localStorage.setItem(key,JSON.stringify(db));render();resetProdForm()};
+function deleteProduct(id){const p=db.products.find(x=>x.id===id);if(!p)return;if(db.sales.some(s=>s.productId===id))return alert('This product has sales. Edit instead.');if(confirm('Delete '+p.name+'?')){db.products=db.products.filter(x=>x.id!==id);save()}}
+function renderSales(){const q=(saleSearch?.value||'').toLowerCase(),pay=salePayFilter?.value||'';const arr=db.sales.filter(s=>(!pay||s.payment===pay)&&[s.date,s.grade||'',s.product,s.payment].join(' ').toLowerCase().includes(q));const groups={};arr.forEach(s=>(groups[s.date]??=[]).push(s));const dates=Object.keys(groups).sort().reverse();salesTable.innerHTML=dates.length?dates.map((date,i)=>{const items=groups[date];const qty=items.reduce((a,x)=>a+x.qty,0),total=items.reduce((a,x)=>a+x.total,0),cost=items.reduce((a,x)=>a+x.cost,0),profit=items.reduce((a,x)=>a+x.profit,0);return `<tr onclick="toggleDateGroup('sales-${date}')" style="cursor:pointer;font-weight:700;background:#eef3fa"><td colspan="9">&#128197; ${date} <span class="badge">Qty: ${qty} | Total: ${money(total)} | Profit: <span class="${profit>=0?'profit':'loss'}">${money(profit)}</span></span></td></tr><tr id="sales-${date}" style="display:none"><td colspan="9"><div class="tablewrap"><table><thead><tr><th>Date</th><th>Grade</th><th>Product</th><th>Qty</th><th>Total</th><th>Cost</th><th>Profit</th><th>Payment</th><th>Actions</th></tr></thead><tbody>${items.map(s=>`<tr><td>${s.date}</td><td>${esc(s.grade||'')}</td><td>${esc(s.product)}</td><td>${s.qty}</td><td>${money(s.total)}</td><td>${money(s.cost)}</td><td class="${s.profit>=0?'profit':'loss'}">${money(s.profit)}</td><td>${esc(s.payment)}</td><td><button class="btn light" onclick="event.stopPropagation();editSale('${s.id}')">Edit</button> <button class="btn red" onclick="event.stopPropagation();deleteSale('${s.id}')">Del</button></td></tr>`).join('')}</tbody></table></div></td></tr>`;}).join(''):'<tr><td colspan="9" class="empty">No sales found.</td></tr>';}
+function toggleDateGroup(id){const r=document.getElementById(id);if(r)r.style.display=r.style.display==='none'?'table-row':'none'}
+function resetSaleForm(){saleForm.reset();sId.value='';sDate.value=today;sQty.value=1;sDiscount.value=0;sPayment.value='Cash';saleSubmit.textContent='Save Sale';renderSaleGrades();productOptions()}
+function editSale(id){const s=db.sales.find(x=>x.id===id);if(!s)return;sId.value=s.id;sDate.value=s.date;sQty.value=s.qty;sDiscount.value=Number.isFinite(+s.discount)?Math.max(0,+s.discount):0;sPayment.value=s.payment;const ep=db.products.find(p=>p.id===s.productId);renderSaleGrades(ep?.grade||'');productOptions(s.productId,ep?.grade||'');saleSubmit.textContent='Update Sale';showPage('sales',[...document.querySelectorAll('nav button')][1]);window.scrollTo({top:0,behavior:'smooth'})}
+saleForm.onsubmit=e=>{e.preventDefault();const p=db.products.find(x=>x.id===sProduct.value),q=+sQty.value,discount=+sDiscount.value||0;if(!p)return alert('Select a product.');if(q<1)return alert('Quantity must be at least 1.');if(sId.value){const old=db.sales.find(x=>x.id===sId.value);if(!old)return;const oldP=db.products.find(x=>x.id===old.productId);if(oldP)oldP.stock+=old.qty;if(q>p.stock){if(oldP)oldP.stock-=old.qty;return alert('Insufficient stock.')}const total=p.sell*q-discount;if(total<0){if(oldP)oldP.stock-=old.qty;return alert('Discount too high.')}p.stock-=q;Object.assign(old,{date:sDate.value,productId:p.id,product:p.name,grade:(p.grade||'').trim(),qty:q,discount,total,cost:p.buy*q,profit:total-p.buy*q,payment:sPayment.value});toast('Sale updated!');}else{if(q>p.stock)return alert('Insufficient stock.');const total=p.sell*q-discount;if(total<0)return alert('Discount too high.');p.stock-=q;db.sales.push({id:uid(),date:sDate.value,productId:p.id,product:p.name,grade:(p.grade||'').trim(),qty:q,discount,total,cost:p.buy*q,profit:total-p.buy*q,payment:sPayment.value});toast('Sale saved!');}localStorage.setItem(key,JSON.stringify(db));render();resetSaleForm();};
+function deleteSale(id){const s=db.sales.find(x=>x.id===id);if(!s)return;if(confirm('Delete this sale? Stock will be returned.')){const p=db.products.find(x=>x.id===s.productId);if(p)p.stock+=s.qty;db.sales=db.sales.filter(x=>x.id!==id);save()}}
+function renderExpenses(){const q=(expSearch?.value||'').toLowerCase();const arr=db.expenses.filter(e=>[e.date,e.cat,e.desc,e.payment].join(' ').toLowerCase().includes(q));const groups={};arr.forEach(e=>(groups[e.date]??=[]).push(e));const dates=Object.keys(groups).sort().reverse();expTable.innerHTML=dates.length?dates.map(date=>{const items=groups[date],amount=items.reduce((a,x)=>a+x.amount,0);return `<tr onclick="toggleDateGroup('exp-${date}')" style="cursor:pointer;font-weight:700;background:#eef3fa"><td colspan="6">&#128197; ${date} <span class="badge">Total: ${money(amount)}</span></td></tr><tr id="exp-${date}" style="display:none"><td colspan="6"><div class="tablewrap"><table><thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th><th>Payment</th><th>Actions</th></tr></thead><tbody>${items.map(e=>`<tr><td>${e.date}</td><td>${esc(e.cat)}</td><td>${esc(e.desc)}</td><td>${money(e.amount)}</td><td>${esc(e.payment)}</td><td><button class="btn light" onclick="event.stopPropagation();editExpense('${e.id}')">Edit</button> <button class="btn red" onclick="event.stopPropagation();deleteExpense('${e.id}')">Del</button></td></tr>`).join('')}</tbody></table></div></td></tr>`;}).join(''):'<tr><td colspan="6" class="empty">No expenses found.</td></tr>';}
+function resetExpForm(){expForm.reset();eId.value='';eDate.value=today;ePayment.value='Cash';expSubmit.textContent='Save Expense'}
+function editExpense(id){const e=db.expenses.find(x=>x.id===id);if(!e)return;eId.value=e.id;eDate.value=e.date;eCat.value=e.cat;eDesc.value=e.desc;eAmount.value=e.amount;ePayment.value=e.payment;expSubmit.textContent='Update Expense';showPage('expenses',[...document.querySelectorAll('nav button')][2]);window.scrollTo({top:0,behavior:'smooth'})}
+expForm.onsubmit=e=>{e.preventDefault();const data={date:eDate.value,cat:eCat.value,desc:eDesc.value.trim(),amount:+eAmount.value,payment:ePayment.value};if(data.amount<0)return alert('Invalid amount.');if(eId.value){const old=db.expenses.find(x=>x.id===eId.value);if(old)Object.assign(old,data);toast('Expense updated!')}else{db.expenses.push({...data,id:uid()});toast('Expense saved!')}localStorage.setItem(key,JSON.stringify(db));render();resetExpForm()};
+function deleteExpense(id){if(confirm('Delete this expense?')){db.expenses=db.expenses.filter(x=>x.id!==id);save()}}
+function report(){let f=rFrom.value,t=rTo.value;if(f&&t&&f>t){rSales.textContent=rCost.textContent=rExp.textContent=rProfit.textContent='Rs. 0.00';return;}const ss=db.sales.filter(x=>(!f||x.date>=f)&&(!t||x.date<=t)),ee=db.expenses.filter(x=>(!f||x.date>=f)&&(!t||x.date<=t));const s=ss.reduce((a,x)=>a+x.total,0),c=ss.reduce((a,x)=>a+x.cost,0),e=ee.reduce((a,x)=>a+x.amount,0);rSales.textContent=money(s);rCost.textContent=money(c);rExp.textContent=money(e);rProfit.textContent=money(s-c-e)}
+function downloadBackup(){const data={version:2,exportedAt:new Date().toISOString(),...db};const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));a.download='DN-POTH-STORE-backup-'+today+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);toast('Backup downloaded!')}
+function restoreBackup(){const f=restoreFile.files[0];if(!f)return alert('Select a backup JSON file.');const r=new FileReader();r.onload=()=>{try{const x=JSON.parse(r.result);if(!Array.isArray(x.products)||!Array.isArray(x.sales)||!Array.isArray(x.expenses))throw Error();db=x;db.products.forEach(p=>p.id??=uid());db.sales.forEach(s=>s.id??=uid());db.expenses.forEach(e=>e.id??=uid());localStorage.setItem(key,JSON.stringify(db));render();restoreFile.value='';alert('Backup restored!');}catch(e){alert('Invalid backup file.')}};r.readAsText(f)}
+function clearAll(){if(confirm('Delete ALL data? This cannot be undone.')){db=blank();save();resetProdForm();resetSaleForm();resetExpForm();alert('All data deleted.')}}
+window.addEventListener('storage',()=>{db=loadDB();render()});
+render();resetSaleForm();resetExpForm();resetProdForm();
+</script>
+</body>
+</html>

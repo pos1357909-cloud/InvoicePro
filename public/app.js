@@ -240,13 +240,16 @@ function setupNavigation() {
 
     navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
+            const target = link.getAttribute('data-target');
+            if (!target) return; // Allow default navigation for links without data-target (like Money Manager)
+
             e.preventDefault();
             navLinks.forEach(l => l.classList.remove('active'));
             link.classList.add('active');
             
-            const target = link.getAttribute('data-target');
             views.forEach(view => view.classList.remove('active'));
-            document.getElementById(target).classList.add('active');
+            const targetEl = document.getElementById(target);
+            if (targetEl) targetEl.classList.add('active');
             
             pageTitle.textContent = link.querySelector('.link-name').textContent;
             currentTab = target;
