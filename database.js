@@ -46,6 +46,7 @@ const CategorySchema = new mongoose.Schema({
 const ProductSchema = new mongoose.Schema({
     user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     category: { type: String, default: 'General' },
+    grade: { type: String, default: '' },
     name: { type: String, required: true },
     quantity: { type: Number, default: 0 },
     price: { type: Number, default: 0.0 },
@@ -54,6 +55,7 @@ const ProductSchema = new mongoose.Schema({
 
 const InvoiceItemSchema = new mongoose.Schema({
     product_name: { type: String, required: true },
+    grade: { type: String, default: '' },
     quantity: { type: Number, required: true },
     price: { type: Number, required: true },
     subtotal: { type: Number, required: true }

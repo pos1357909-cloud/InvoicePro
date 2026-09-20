@@ -332,6 +332,7 @@ app.get('/api/products', async (req, res) => {
         const mappedProducts = products.map(p => ({
             id: p._id.toString(),
             category: p.category,
+            grade: p.grade,
             name: p.name,
             quantity: p.quantity,
             price: p.price,
@@ -346,7 +347,7 @@ app.get('/api/products', async (req, res) => {
 });
 
 app.post('/api/products', async (req, res) => {
-    const { name, category, quantity, price, image } = req.body;
+    const { name, category, grade, quantity, price, image } = req.body;
     if (!name || quantity === undefined || price === undefined) {
         return res.status(400).json({ error: 'Missing required fields' });
     }
@@ -355,24 +356,25 @@ app.post('/api/products', async (req, res) => {
         const product = await Product.create({
             user_id: req.user._id,
             category: category || 'General',
+            grade: grade || '',
             name,
             quantity,
             price,
             image
         });
-        res.status(201).json({ id: product._id.toString(), category: product.category, name, quantity, price, image });
+        res.status(201).json({ id: product._id.toString(), category: product.category, grade: product.grade, name, quantity, price, image });
     } catch (err) {
         return res.status(500).json({ error: err.message });
     }
 });
 
 app.put('/api/products/:id', async (req, res) => {
-    const { name, category, quantity, price, image } = req.body;
+    const { name, category, grade, quantity, price, image } = req.body;
     try {
         const queryFilter = req.user.role === 'admin' ? { _id: req.params.id } : { _id: req.params.id, user_id: req.user._id };
         const product = await Product.findOneAndUpdate(
             queryFilter,
-            { name, category, quantity, price, image },
+            { name, category, grade, quantity, price, image },
             { new: true }
         );
         if (!product) return res.status(404).json({ error: 'Product not found' });
@@ -457,6 +459,7 @@ app.get('/api/invoices/:id', async (req, res) => {
             items: invoice.items.map(item => ({
                 id: item._id ? item._id.toString() : null,
                 product_name: item.product_name,
+                grade: item.grade || '',
                 quantity: item.quantity,
                 price: item.price,
                 subtotal: item.subtotal
@@ -484,6 +487,7 @@ app.post('/api/invoices', async (req, res) => {
 
     const formattedItems = items.map(item => ({
         product_name: item.name,
+        grade: item.grade || '',
         quantity: item.quantity,
         price: item.price,
         subtotal: item.quantity * item.price

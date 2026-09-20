@@ -94,7 +94,7 @@ th{background:#f1f5fa;color:#40506a;white-space:nowrap}
     <label>Payment<select id="sPayment"><option>Cash</option><option>Bank</option><option>Online</option><option>COD</option></select></label>
   </div>
   <button class="btn" id="saleSubmit">Save Sale</button>
-  <button type="button" class="btn gray" onclick="resetSaleForm()">Clear</button>
+  <button type="button" class="btn gray" onclick="resetSaleForm()">Reset</button>
   <p class="note">Selling price and buying cost are taken automatically from the selected product. You can tick multiple products to add them at once.</p>
   </form>
   <div class="toolbar">
@@ -117,7 +117,7 @@ th{background:#f1f5fa;color:#40506a;white-space:nowrap}
     <label>Payment<select id="ePayment"><option>Cash</option><option>Bank</option><option>Online</option></select></label>
   </div>
   <button class="btn" id="expSubmit">Save Expense</button>
-  <button type="button" class="btn gray" onclick="resetExpForm()">Clear</button>
+  <button type="button" class="btn gray" onclick="resetExpForm()">Reset</button>
   </form>
   <div class="toolbar"><input id="expSearch" placeholder="Search expenses..." oninput="renderExpenses()"></div>
   <div class="tablewrap"><table>
@@ -139,8 +139,15 @@ th{background:#f1f5fa;color:#40506a;white-space:nowrap}
     <label>Selling Price<input type="number" id="pSell" min="0" step="0.01" required></label>
     <label>Stock Qty<input type="number" id="pStock" min="0" required></label>
   </div>
-  <button class="btn" id="prodSubmit">Add Product</button>
-  <button type="button" class="btn gray" onclick="resetProdForm()">Clear</button>
+  <div style="display:flex; gap:8px; margin-top:13px; align-items:center;">
+    <button class="btn" id="prodSubmit" style="margin-top:0;">Add Product</button>
+    <select id="pResetType" style="margin-top:0; max-width:140px;">
+      <option value="all">Reset All</option>
+      <option value="quantity">Reset Quantity</option>
+      <option value="price">Reset Price</option>
+    </select>
+    <button type="button" class="btn gray" style="margin-top:0;" onclick="customResetProdForm()">Reset</button>
+  </div>
   </form>
   <div class="panel" style="margin-top:18px">
     <div class="pagehead"><h3>&#128203; Grade-wise Details</h3>
@@ -245,6 +252,7 @@ async function syncPosProducts() {
 }
 
 function resetProdForm(){prodForm.reset();pId.value='';prodSubmit.textContent='Add Product'}
+function customResetProdForm(){const t=document.getElementById('pResetType').value;if(t==='all')resetProdForm();else if(t==='quantity')pStock.value='';else if(t==='price'){pBuy.value='';pSell.value='';}}
 function editProduct(id){const p=db.products.find(x=>x.id===id);if(!p)return;pId.value=p.id;pName.value=p.name;pGrade.value=p.grade;pSubject.value=p.subject;pBuy.value=p.buy;pSell.value=p.sell;pStock.value=p.stock;prodSubmit.textContent='Update Product';showPage('products',[...document.querySelectorAll('nav button')][3]);window.scrollTo({top:0,behavior:'smooth'})}
 prodForm.onsubmit=e=>{e.preventDefault();const data={name:pName.value.trim(),grade:pGrade.value.trim(),subject:pSubject.value.trim(),buy:+pBuy.value,sell:+pSell.value,stock:+pStock.value};if(!data.name)return alert('Enter a product name.');if(data.sell<0||data.buy<0||data.stock<0)return alert('Invalid values.');if(pId.value){const p=db.products.find(x=>x.id===pId.value);if(p)Object.assign(p,data);toast('Product updated!')}else{db.products.push({...data,id:uid()});toast('Product added!')}localStorage.setItem(key,JSON.stringify(db));render();resetProdForm()};
 function deleteProduct(id){const p=db.products.find(x=>x.id===id);if(!p)return;if(db.sales.some(s=>s.productId===id))return alert('This product has sales. Edit instead.');if(confirm('Delete '+p.name+'?')){db.products=db.products.filter(x=>x.id!==id);save()}}

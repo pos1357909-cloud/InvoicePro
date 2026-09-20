@@ -675,6 +675,15 @@ async function loadInventory() {
             filterBadge.style.display = 'none';
         }
         
+        // Sort by grade, then name
+        productsToRender.sort((a, b) => {
+            const gradeA = (a.grade || '').toLowerCase();
+            const gradeB = (b.grade || '').toLowerCase();
+            if (gradeA < gradeB) return -1;
+            if (gradeA > gradeB) return 1;
+            return a.name.localeCompare(b.name);
+        });
+        
         productsToRender.forEach(p => {
             const imgHtml = p.image ? `<img src="${p.image}" style="width:40px;height:40px;border-radius:8px;object-fit:cover;">` : `<div style="width:40px;height:40px;border-radius:8px;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-size:10px;color:#64748b;">No Img</div>`;
             const tr = document.createElement('tr');
@@ -687,6 +696,7 @@ async function loadInventory() {
             tr.innerHTML = `
                 <td style="display:flex;align-items:center;gap:12px;">${imgHtml} ${nameDisplay}</td>
                 <td><span class="badge" style="background:var(--secondary);color:var(--text);padding:2px 8px;border-radius:4px;font-size:11px;">${p.category || 'General'}</span></td>
+                <td><span class="badge" style="background:var(--primary);color:white;padding:2px 8px;border-radius:4px;font-size:11px;">${p.grade || 'N/A'}</span></td>
                 <td class="${p.quantity <= 10 ? 'text-danger' : ''}">${p.quantity}</td>
                 <td>${formatCurrency(p.price)}</td>
                 <td>
@@ -726,6 +736,7 @@ async function editProduct(id) {
     if(p) {
         document.getElementById('product-id').value = p.id;
         document.getElementById('product-name').value = p.name;
+        document.getElementById('product-grade').value = p.grade || '';
         
         await loadCategoriesForSelect();
         document.getElementById('product-category').value = p.category || 'General';
@@ -912,6 +923,7 @@ async function handleBillSubmission(action) {
     let balance = totalAmount - advancePayment;
     const customerName = document.getElementById('pos-customer-name').value;
     const customerNumber = document.getElementById('pos-customer-number').value;
+    const saveToSystem = document.getElementById('pos-save-system').checked;
     
     const payload = {
         items: currentBill,
@@ -926,16 +938,47 @@ async function handleBillSubmission(action) {
     };
     
     try {
-        const res = await fetchAuth(`${API_BASE}/invoices`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-        
-        if (!res.ok) throw new Error('Failed to create invoice');
-        
-        const data = await res.json();
-        const invoice = data.invoice;
+        let invoice;
+        if (saveToSystem) {
+            const res = await fetchAuth(`${API_BASE}/invoices`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            
+            if (!res.ok) throw new Error('Failed to create invoice');
+            
+            const data = await res.json();
+            invoice = data.invoice;
+        } else {
+            // Generate a temporary invoice object for printing without saving
+            const today = new Date();
+            invoice = {
+                invoice_number: 'TEMP-' + today.getTime().toString().slice(-6),
+                date: today.toISOString().split('T')[0],
+                time: today.toTimeString().split(' ')[0].substring(0, 5),
+                customer_name: customerName,
+                customer_number: customerNumber,
+                business_details: {
+                    name: currentBusiness,
+                    email: currentEmail,
+                    whatsapp: currentWhatsApp,
+                    bank_details: currentBankDetails
+                },
+                sub_total: subTotal,
+                discount: discount,
+                delivery_fee: deliveryFee,
+                total_amount: totalAmount,
+                advance_payment: advancePayment,
+                balance: balance,
+                items: currentBill.map(item => ({
+                    product_name: item.name,
+                    quantity: item.quantity,
+                    price: item.price,
+                    subtotal: item.quantity * item.price
+                }))
+            };
+        }
         
         // Execute specific action after saving
         if (action === 'submit') {
@@ -957,12 +1000,14 @@ async function handleBillSubmission(action) {
         document.getElementById('pos-customer-number').value = '';
         updateBillUI();
         
-        // Reload products cache to reflect stock updates
-        fetchAuth(`${API_BASE}/products`).then(r => r.json()).then(p => products = p);
+        if (saveToSystem) {
+            // Reload products cache to reflect stock updates
+            fetchAuth(`${API_BASE}/products`).then(r => r.json()).then(p => products = p);
+        }
         
     } catch (err) {
         console.error(err);
-        alert('Error saving bill: ' + err.message);
+        alert('Error processing bill: ' + err.message);
     }
 }
 
@@ -1446,3 +1491,15 @@ async function deleteCategory(id) {
         } catch (err) { console.error(err); }
     }
 }
+document.getElementById('btn-product-reset').addEventListener('click', () => {
+    const type = document.getElementById('product-reset-type').value;
+    if (type === 'all') {
+        document.getElementById('product-form').reset();
+        document.getElementById('product-id').value = '';
+        document.getElementById('product-image-preview').innerHTML = '<span style="color:var(--text-muted);font-size:12px;">+ Add Image</span>';
+    } else if (type === 'quantity') {
+        document.getElementById('product-qty').value = '';
+    } else if (type === 'price') {
+        document.getElementById('product-price').value = '';
+    }
+});
