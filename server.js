@@ -400,6 +400,17 @@ app.delete('/api/products/:id', async (req, res) => {
     }
 });
 
+// Reset all inventory quantities and prices to 0
+app.post('/api/products/reset-inventory', async (req, res) => {
+    try {
+        const queryFilter = req.user.role === 'admin' ? {} : { user_id: req.user._id };
+        await Product.updateMany(queryFilter, { quantity: 0, price: 0 });
+        res.json({ message: 'Inventory reset successfully' });
+    } catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+});
+
 // ==== INVOICES API ====
 
 app.get('/api/invoices', async (req, res) => {

@@ -1514,10 +1514,19 @@ document.getElementById('btn-product-reset').addEventListener('click', () => {
     }
 });
 
-// Inventory Reset button - clears search/filter and reloads full inventory
-document.getElementById('btn-inventory-reset')?.addEventListener('click', () => {
-    adminInventoryFilter = null;
-    const filterBadge = document.getElementById('inventory-filter-badge');
-    if (filterBadge) filterBadge.style.display = 'none';
-    loadInventory();
+// Inventory Reset button - resets all product quantity and price to 0
+document.getElementById('btn-inventory-reset')?.addEventListener('click', async () => {
+    if (!confirm('⚠️ සියලු items වල Quantity සහ Price 0 ට reset වේ. ඉදිරියට යන්නද?')) return;
+    try {
+        const res = await fetchAuth(`${API_BASE}/products/reset-inventory`, { method: 'POST' });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.error || 'Reset failed');
+        }
+        loadInventory();
+        alert('✅ Inventory reset successfully! සියලු items වල Quantity සහ Price 0 ට set විය.');
+    } catch (err) {
+        console.error(err);
+        alert('❌ Error: ' + err.message);
+    }
 });
