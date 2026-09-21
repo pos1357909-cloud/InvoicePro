@@ -249,6 +249,10 @@ app.get('/api/dashboard', async (req, res) => {
         const totalProducts = await Product.countDocuments(queryFilter);
         const lowStockProducts = await Product.countDocuments({ ...queryFilter, quantity: { $lte: 10 } });
 
+        // Stock Value = sum of (price × quantity) for all products
+        const allProducts = await Product.find(queryFilter, 'price quantity');
+        const stockValue = allProducts.reduce((sum, p) => sum + (p.price * p.quantity), 0);
+
         res.json({
             totalBillsToday,
             dailyIncome,
@@ -257,7 +261,8 @@ app.get('/api/dashboard', async (req, res) => {
             monthlyIncome,
             monthlyDelivery,
             totalProducts,
-            lowStockProducts
+            lowStockProducts,
+            stockValue
         });
     } catch (err) {
         return res.status(500).json({ error: err.message });

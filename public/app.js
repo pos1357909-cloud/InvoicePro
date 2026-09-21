@@ -628,6 +628,9 @@ async function loadDashboard() {
         }
         document.getElementById('dash-total-products').textContent = stats.totalProducts;
         document.getElementById('dash-low-stock').textContent = stats.lowStockProducts;
+        if (document.getElementById('dash-stock-value')) {
+            document.getElementById('dash-stock-value').textContent = formatCurrency(stats.stockValue || 0);
+        }
 
         // Load low stock table
         const resAlerts = await fetchAuth(`${API_BASE}/dashboard/low-stock`);
@@ -1144,12 +1147,27 @@ document.getElementById('btn-generate-image').addEventListener('click', () => ha
 document.getElementById('btn-send-wa').addEventListener('click', () => handleBillSubmission('whatsapp'));
 
 document.getElementById('btn-reset-bill').addEventListener('click', () => {
-    currentBill = [];
-    document.getElementById('pos-discount').value = '0';
-    document.getElementById('pos-delivery-fee').value = '0';
-    document.getElementById('pos-advance-payment').value = '0';
-    document.getElementById('pos-customer-name').value = '';
-    document.getElementById('pos-customer-number').value = '';
+    const resetType = document.getElementById('bill-reset-type').value;
+
+    if (resetType === 'all') {
+        // Reset everything — clear bill + extra fields
+        currentBill = [];
+        document.getElementById('pos-discount').value = '0';
+        document.getElementById('pos-delivery-fee').value = '0';
+        document.getElementById('pos-advance-payment').value = '0';
+        document.getElementById('pos-customer-name').value = '';
+        document.getElementById('pos-customer-number').value = '';
+    } else if (resetType === 'quantity') {
+        // Reset each item's quantity to 1
+        currentBill.forEach(item => { item.quantity = 1; });
+    } else if (resetType === 'price') {
+        // Reset each item's price back to the original product price
+        currentBill.forEach(item => {
+            const original = products.find(p => p.id === item.id);
+            if (original) item.price = original.price;
+        });
+    }
+
     updateBillUI();
 });
 

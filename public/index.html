@@ -210,6 +210,13 @@
                                 <p class="stat-value" id="dash-low-stock">0</p>
                             </div>
                         </div>
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background: rgba(16, 185, 129, 0.12); color: #10b981;"><i class="bx bx-layer"></i></div>
+                            <div class="stat-details">
+                                <h3>Stock Value</h3>
+                                <p class="stat-value" id="dash-stock-value">0.00</p>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="dashboard-tables">
@@ -298,8 +305,15 @@
                                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                                     <button class="btn btn-pdf btn-sm" id="btn-generate-pdf" style="font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 5px;"><i class="bx bxs-file-pdf"></i> PDF</button>
                                     <button class="btn btn-image btn-sm" id="btn-generate-image" style="font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 5px;"><i class="bx bxs-image"></i> Image</button>
-                                    <button class="btn btn-reset btn-sm" id="btn-reset-bill" style="font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 5px;"><i class="bx bx-reset"></i> Reset</button>
                                     <button class="btn btn-whatsapp btn-sm" id="btn-send-wa" style="font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 5px;"><i class="bx bxl-whatsapp"></i> WhatsApp</button>
+                                    <div style="display: flex; gap: 5px; align-items: center;">
+                                        <select id="bill-reset-type" class="form-control" style="height: 34px; font-size: 11px; padding: 4px 6px; flex: 1; min-width: 0;">
+                                            <option value="all">Reset All</option>
+                                            <option value="quantity">Quantity</option>
+                                            <option value="price">Price</option>
+                                        </select>
+                                        <button class="btn btn-reset btn-sm" id="btn-reset-bill" style="font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 4px; white-space: nowrap; height: 34px; padding: 0 10px;"><i class="bx bx-reset"></i> Reset</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
