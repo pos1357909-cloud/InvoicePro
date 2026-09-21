@@ -678,14 +678,8 @@ async function loadInventory() {
             filterBadge.style.display = 'none';
         }
         
-        // Sort by grade, then name
-        productsToRender.sort((a, b) => {
-            const gradeA = (a.grade || '').toLowerCase();
-            const gradeB = (b.grade || '').toLowerCase();
-            if (gradeA < gradeB) return -1;
-            if (gradeA > gradeB) return 1;
-            return a.name.localeCompare(b.name);
-        });
+        // Sort by name
+        productsToRender.sort((a, b) => a.name.localeCompare(b.name));
         
         productsToRender.forEach(p => {
             const imgHtml = p.image ? `<img src="${p.image}" style="width:40px;height:40px;border-radius:8px;object-fit:cover;">` : `<div style="width:40px;height:40px;border-radius:8px;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-size:10px;color:#64748b;">No Img</div>`;
@@ -699,7 +693,6 @@ async function loadInventory() {
             tr.innerHTML = `
                 <td style="display:flex;align-items:center;gap:12px;">${imgHtml} ${nameDisplay}</td>
                 <td><span class="badge" style="background:var(--secondary);color:var(--text);padding:2px 8px;border-radius:4px;font-size:11px;">${p.category || 'General'}</span></td>
-                <td><span class="badge" style="background:var(--primary);color:white;padding:2px 8px;border-radius:4px;font-size:11px;">${p.grade || 'N/A'}</span></td>
                 <td class="${p.quantity <= 10 ? 'text-danger' : ''}">${p.quantity}</td>
                 <td>${formatCurrency(p.price)}</td>
                 <td>
@@ -739,7 +732,6 @@ async function editProduct(id) {
     if(p) {
         document.getElementById('product-id').value = p.id;
         document.getElementById('product-name').value = p.name;
-        document.getElementById('product-grade').value = p.grade || '';
         
         await loadCategoriesForSelect();
         document.getElementById('product-category').value = p.category || 'General';
@@ -1520,4 +1512,12 @@ document.getElementById('btn-product-reset').addEventListener('click', () => {
     } else if (type === 'price') {
         document.getElementById('product-price').value = '';
     }
+});
+
+// Inventory Reset button - clears search/filter and reloads full inventory
+document.getElementById('btn-inventory-reset')?.addEventListener('click', () => {
+    adminInventoryFilter = null;
+    const filterBadge = document.getElementById('inventory-filter-badge');
+    if (filterBadge) filterBadge.style.display = 'none';
+    loadInventory();
 });

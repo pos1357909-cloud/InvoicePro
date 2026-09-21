@@ -337,6 +337,7 @@
                             <button class="btn btn-outline" id="btn-export-inventory"><i class="bx bx-download"></i>
                                 Export CSV</button>
                             <button class="btn btn-outline" id="btn-manage-categories"><i class="bx bx-list-ul"></i> Categories</button>
+                            <button class="btn btn-reset" id="btn-inventory-reset" style="display:flex;align-items:center;gap:5px;"><i class="bx bx-reset"></i> Reset</button>
                             <button class="btn btn-primary" id="btn-add-product"><i class="bx bx-plus"></i> Add
                                 Product</button>
                         </div>
@@ -348,7 +349,6 @@
                                     <tr>
                                         <th>Item Name</th>
                                         <th>Category</th>
-                                        <th>Grade</th>
                                         <th>Quantity</th>
                                         <th>Price</th>
                                         <th>Actions</th>
@@ -517,10 +517,6 @@
                                     <!-- Dynamic Categories -->
                                 </select>
                             </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Grade (Optional)</label>
-                            <input type="text" id="product-grade" class="form-control" placeholder="e.g. A, B, Grade 1" />
                         </div>
                         <div class="form-group">
                             <label>Item Name</label>
